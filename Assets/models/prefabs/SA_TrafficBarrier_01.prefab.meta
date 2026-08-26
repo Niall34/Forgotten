@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ac88bfff72bd6a149bb608ce16b9daff
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 4565
+  packageName: Street Assets
+  packageVersion: 1.1
+  assetPath: Assets/Street Assets/Prefabs/SA_TrafficBarrier_01.prefab
+  uploadId: 26962

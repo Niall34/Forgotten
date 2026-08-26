@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 568ccaba17da49e42b082319be1d9f1c
+timeCreated: 1515472912
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59840
+  packageName: PBR Dirty Dumpster
+  packageVersion: 2.0
+  assetPath: Assets/Dumpster/Prefab/Dumpster.prefab
+  uploadId: 222963
