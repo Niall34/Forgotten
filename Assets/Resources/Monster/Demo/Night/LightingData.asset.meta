@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4437e52497d6d144fadc2f55fbd16e39
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 112000000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226029
+  packageName: Skinless Zombie
+  packageVersion: 1.1.0
+  assetPath: Assets/Tensori/SkinlessZombie/Demo/Night/LightingData.asset
+  uploadId: 518731

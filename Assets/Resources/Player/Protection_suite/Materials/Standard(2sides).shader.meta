@@ -1,0 +1,25 @@
+fileFormatVersion: 2
+guid: 010cae60d03cd164fab9be6ab6aa975b
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures:
+  - _MainTex: {instanceID: 0}
+  - _MetallicGlossMap: {instanceID: 0}
+  - _BumpMap: {fileID: 2800000, guid: f47ecea4787483544934d8b9ef7027c5, type: 3}
+  - _ParallaxMap: {instanceID: 0}
+  - _OcclusionMap: {instanceID: 0}
+  - _EmissionMap: {instanceID: 0}
+  - _DetailMask: {instanceID: 0}
+  - _DetailAlbedoMap: {instanceID: 0}
+  - _DetailNormalMap: {instanceID: 0}
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 158254
+  packageName: Protective suit
+  packageVersion: 1.0
+  assetPath: Assets/Protection_suite/Materials/Standard(2sides).shader
+  uploadId: 361326

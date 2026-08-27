@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f763e45ac0414d544a2eccc35a4b3a28
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226029
+  packageName: Skinless Zombie
+  packageVersion: 1.1.0
+  assetPath: Assets/Tensori/SkinlessZombie/Demo Scripts/AnimationItemData.cs
+  uploadId: 518731
