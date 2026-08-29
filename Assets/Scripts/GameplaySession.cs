@@ -4,7 +4,7 @@ using UnityEngine;
 // the starting point for the real gameplay scene, spawns the local player's character
 // at a random point set by forgottenplayerspawnpoint
 
-public class ForgottenGameplaySession : MonoBehaviour
+public class GameplaySession : MonoBehaviour
 {
     public string playerPrefabName = "Player";
 
@@ -18,7 +18,7 @@ public class ForgottenGameplaySession : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero; // FIX: this was missing, spawnPosition was never declared before
         Quaternion spawnRotation = Quaternion.identity;
 
-        ForgottenPlayerSpawnPoint[] spawnPoints = FindObjectsOfType<ForgottenPlayerSpawnPoint>();
+        PlayerSpawnPoint[] spawnPoints = FindObjectsOfType<PlayerSpawnPoint>();
         if (spawnPoints.Length > 0) // FIX: added this check back, without it spawnPoints[randomIndex] crashes on an empty scene
         {
             int randomIndex = Random.Range(0, spawnPoints.Length);

@@ -7,7 +7,7 @@ using UnityEngine;
 // other scripts like forgottenlobbyUI just check this scripts variables in
 // their own Update() method, and react when something changes
 // like when InRoom flips from false to true, that means the player just joined a room
-public class ForgottenNetworkManager : MonoBehaviourPunCallbacks
+public class NetworkManager : MonoBehaviourPunCallbacks
 {
     // a room code is made from these characters 0, 1, O and I left out since they're easy to mix up
     private const string CodeCharacters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -28,7 +28,7 @@ public class ForgottenNetworkManager : MonoBehaviourPunCallbacks
 
     // other scripts read these values
 
-    public static ForgottenNetworkManager Instance;
+    public static NetworkManager Instance;
 
     public bool IsConnected { get { return PhotonNetwork.IsConnectedAndReady; } }
     public bool InLobby { get { return PhotonNetwork.InLobby; } }
@@ -60,15 +60,15 @@ public class ForgottenNetworkManager : MonoBehaviourPunCallbacks
     private int hostRetryCount = 0;
 
     // any script that needs the network manager call this
-    public static ForgottenNetworkManager Bootstrap()
+    public static NetworkManager Bootstrap()
     {
         if (Instance != null)
         {
             return Instance;
         }
 
-        GameObject managerObject = new GameObject("ForgottenNetworkManager");
-        ForgottenNetworkManager manager = managerObject.AddComponent<ForgottenNetworkManager>();
+        GameObject managerObject = new GameObject("NetworkManager");
+        NetworkManager manager = managerObject.AddComponent<NetworkManager>();
         DontDestroyOnLoad(managerObject);
         return manager;
     }

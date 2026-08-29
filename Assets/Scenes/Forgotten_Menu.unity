@@ -5082,7 +5082,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 354752334}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d45308708d05c654d993cf50f3500d77, type: 3}
+  m_Script: {fileID: 11500000, guid: 3c6d127fcc05ffd40bc40cc67075a688, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbySpawnPoint
 --- !u!4 &354752336
@@ -9742,8 +9742,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe88c4d0a22a6324eac866d00d9ab4d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbyStage
-  characterPrefabName: Player/LobbyCharacter
-  previewCharacterPrefab: {fileID: 8650357492239534285, guid: b5f93d36475b7354c840261ac53a0bb6, type: 3}
 --- !u!4 &680519928
 Transform:
   m_ObjectHideFlags: 0
@@ -10398,8 +10396,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe88c4d0a22a6324eac866d00d9ab4d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbyStage
-  characterPrefabName: Player/LobbyCharacter
-  previewCharacterPrefab: {fileID: 8650357492239534285, guid: b5f93d36475b7354c840261ac53a0bb6, type: 3}
 --- !u!1001 &780345492
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13046,6 +13042,7 @@ GameObject:
   m_Component:
   - component: {fileID: 958264913}
   - component: {fileID: 958264912}
+  - component: {fileID: 958264914}
   m_Layer: 0
   m_Name: ForgottenLobbySpawnPoint (1)
   m_TagString: Untagged
@@ -13080,6 +13077,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &958264914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 958264911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c6d127fcc05ffd40bc40cc67075a688, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LobbySpawnPoint
 --- !u!1 &958752171
 GameObject:
   m_ObjectHideFlags: 0
@@ -15297,6 +15306,7 @@ GameObject:
   - component: {fileID: 1107226412}
   - component: {fileID: 1107226411}
   - component: {fileID: 1107226415}
+  - component: {fileID: 1107226416}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -15405,12 +15415,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06c4f3946ff4c3c438a4385cae3eba98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbyUI
+--- !u!114 &1107226416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1107226409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b22538b36876944c9889a30c62a685f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LobbyUI
   namePromptPanel: {fileID: 1585163466}
   mainLobbyPanel: {fileID: 2090367539}
   joiningLobbyPanel: {fileID: 392008363}
   joinedLobbyPanel: {fileID: 312977975}
   hostingLobbyPanel: {fileID: 510182002}
-  lobbyStage: {fileID: 779633923}
+  lobbyStage: {fileID: 0}
   nameField: {fileID: 1420855853}
   continueButton: {fileID: 1868959905}
   playButton: {fileID: 649948676}
@@ -16114,25 +16136,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
-  m_SendPointerHoverToParent: 1
-  m_MoveRepeatDelay: 0.5
-  m_MoveRepeatRate: 0.1
-  m_XRTrackingOrigin: {fileID: 0}
-  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_DeselectOnBackgroundClick: 1
-  m_PointerBehavior: 0
-  m_CursorLockBehavior: 0
-  m_ScrollDeltaPerTick: 6
 --- !u!114 &1163965848
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16831,6 +16834,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1234202956}
   - component: {fileID: 1234202955}
+  - component: {fileID: 1234202957}
   m_Layer: 0
   m_Name: ForgottenLobbySpawnPoint
   m_TagString: Untagged
@@ -16865,6 +16869,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1234202957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234202954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c6d127fcc05ffd40bc40cc67075a688, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LobbySpawnPoint
 --- !u!1 &1276148450
 GameObject:
   m_ObjectHideFlags: 1
@@ -16941,7 +16957,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1278562848}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d45308708d05c654d993cf50f3500d77, type: 3}
+  m_Script: {fileID: 11500000, guid: 3c6d127fcc05ffd40bc40cc67075a688, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbySpawnPoint
 --- !u!4 &1278562850

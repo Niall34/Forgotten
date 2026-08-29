@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 [RequireComponent(typeof(PhotonView))]
 [RequireComponent(typeof(CharacterController))]
-public class ForgottenPlayerController : MonoBehaviourPun
+public class PlayerController : MonoBehaviourPun
 {
     [Header("Movement")]
     public float moveSpeed = 4.5f;
@@ -22,8 +22,8 @@ public class ForgottenPlayerController : MonoBehaviourPun
     public float lookSensitivity = 0.15f;
 
     // every spawned player adds itself here, so things that needs to find every player currently visible (like a minimap), gets it here
-    private static List<ForgottenPlayerController> allPlayers = new List<ForgottenPlayerController>();
-    public static List<ForgottenPlayerController> All
+    private static List<PlayerController> allPlayers = new List<PlayerController>();
+    public static List<PlayerController> All
     {
         get { return allPlayers; }
     }
@@ -34,8 +34,8 @@ public class ForgottenPlayerController : MonoBehaviourPun
     private float cameraPitch = 0f;
     private float verticalVelocity = 0f;
 
-    private ForgottenTouchJoystick moveJoystick;
-    private ForgottenTouchLookSurface lookSurface;
+    private TouchJoystick moveJoystick;
+    private TouchLookSurface lookSurface;
 
     private void Awake() // grabs the CharacterController component off this same object
     {
@@ -158,8 +158,8 @@ public class ForgottenPlayerController : MonoBehaviourPun
 
         // The look surface is added first (an earlier sibling draws underneath a later
         // one), so the joystick's own corner can sit on top and steal touches over itself.
-        lookSurface = ForgottenTouchLookSurface.Create(canvasRoot);
-        moveJoystick = ForgottenTouchJoystick.Create(canvasRoot, new Vector2(0f, 0f), new Vector2(0.32f, 0.42f));
+        lookSurface = TouchLookSurface.Create(canvasRoot);
+        moveJoystick = TouchJoystick.Create(canvasRoot, new Vector2(0f, 0f), new Vector2(0.32f, 0.42f));
     }
 
     private void EnsureEventSystem() // makes sure exactly one EventSystem exists in the scene

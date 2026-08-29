@@ -8,9 +8,9 @@ using UnityEngine.UI;
 // controls the whole 2D menu, entering your name, then hosting/joining/playing solo and
 // the ready up screens once you're in a room
 
-public class ForgottenLobbyUI : MonoBehaviour
+public class LobbyUI : MonoBehaviour
 {
-    private const string NicknameKey = "ForgottenNickname";
+    private const string NicknameKey = "Nickname";
 
     [Header("Panels")]
     public GameObject namePromptPanel;
@@ -20,7 +20,7 @@ public class ForgottenLobbyUI : MonoBehaviour
     public GameObject hostingLobbyPanel;
 
     [Header("Staging")]
-    public ForgottenLobbyStage lobbyStage;
+    public LobbyStage lobbyStage;
 
     [Header("Intro Panel")]
     public TMP_InputField nameField;
@@ -50,7 +50,7 @@ public class ForgottenLobbyUI : MonoBehaviour
     public TextMeshProUGUI statusText;
 
     private Canvas canvas;
-    private ForgottenNetworkManager net;
+    private NetworkManager net;
     private string storedNickname = "";
 
     // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes
@@ -75,7 +75,7 @@ public class ForgottenLobbyUI : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         canvas = GetComponent<Canvas>();
-        net = ForgottenNetworkManager.Bootstrap();
+        net = NetworkManager.Bootstrap();
 
         continueButton.onClick.AddListener(OnNameContinueClicked);
         playButton.onClick.AddListener(OnPlayClicked);

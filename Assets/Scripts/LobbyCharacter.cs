@@ -5,20 +5,20 @@ using UnityEngine.UI;
 // this is for the lobby characters when playing with other people, one has a floating name and ready-state label
 // which update themselves automatically by reading straight from photon
 [RequireComponent(typeof(PhotonView))]
-public class ForgottenLobbyCharacter : MonoBehaviourPun
+public class LobbyCharacter : MonoBehaviourPun
 {
     [Header("Name Tag")]
     public float tagHeight = 2.1f;
     public Color readyColor = new Color(0.35f, 0.9f, 0.4f);
     public Color notReadyColor = new Color(0.85f, 0.85f, 0.85f);
 
-    private ForgottenNetworkManager net;
+    private NetworkManager net;
     private Text readyGlyph;
     private RectTransform tagRoot;
 
     private void Awake() // grabs the network manager
     {
-        net = ForgottenNetworkManager.Bootstrap();
+        net = NetworkManager.Bootstrap();
     }
 
     private void Start() // builds the floating name tag

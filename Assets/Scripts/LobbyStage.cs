@@ -3,20 +3,20 @@ using Photon.Pun;
 
 // this controls the lobby scene which controls and shows a local-only preview character before anyone has hosted or joined
 // and spawns the real networked character once the player is in a room
-public class ForgottenLobbyStage : MonoBehaviour
+public class LobbyStage : MonoBehaviour
 {
     public string characterPrefabName = "LobbyCharacter";
 
     public GameObject previewCharacterPrefab;
 
-    private ForgottenNetworkManager net;
+    private NetworkManager net;
     private bool hasSpawnedReal = false;
     private GameObject previewInstance;
     private bool wasInRoom = false;
 
     private void Start() // grabs the network manager
     {
-        net = ForgottenNetworkManager.Bootstrap();
+        net = NetworkManager.Bootstrap();
     }
 
     private void Update() // watches for joining a room, to swap the preview for the real character
@@ -35,7 +35,7 @@ public class ForgottenLobbyStage : MonoBehaviour
         if (previewInstance != null)
         {
             // just update its label instead of making a duplicate
-            ForgottenLobbyPreviewCharacter existing = previewInstance.GetComponent<ForgottenLobbyPreviewCharacter>();
+            LobbyPreviewCharacter existing = previewInstance.GetComponent<LobbyPreviewCharacter>();
             if (existing != null)
             {
                 existing.SetDisplayName(displayName);
@@ -46,7 +46,7 @@ public class ForgottenLobbyStage : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
 
-        ForgottenLobbySpawnPoint[] spawnPoints = FindObjectsOfType<ForgottenLobbySpawnPoint>();
+        LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
         if (spawnPoints.Length > 0)
         {
             Transform firstPoint = spawnPoints[0].transform;
@@ -56,7 +56,7 @@ public class ForgottenLobbyStage : MonoBehaviour
 
         previewInstance = Instantiate(previewCharacterPrefab, spawnPosition, spawnRotation);
 
-        ForgottenLobbyPreviewCharacter previewScript = previewInstance.GetComponent<ForgottenLobbyPreviewCharacter>();
+        LobbyPreviewCharacter previewScript = previewInstance.GetComponent<LobbyPreviewCharacter>();
         if (previewScript != null)
         {
             previewScript.SetDisplayName(displayName);
@@ -93,7 +93,7 @@ public class ForgottenLobbyStage : MonoBehaviour
         // player numbers start at 1, so this gives every player a different spawn point and
         // keeps the same player in the same seat if they rejoin - if you've got more players
         // than spawn points placed this will throw, so make sure you've placed enough
-        ForgottenLobbySpawnPoint[] spawnPoints = FindObjectsOfType<ForgottenLobbySpawnPoint>();
+        LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
         int mySeat = PhotonNetwork.LocalPlayer.ActorNumber - 1;
         Transform chosenPoint = spawnPoints[mySeat].transform;
 
