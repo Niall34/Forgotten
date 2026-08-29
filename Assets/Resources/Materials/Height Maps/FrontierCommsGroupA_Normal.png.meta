@@ -117,5 +117,5 @@ AssetOrigin:
   productId: 329007
   packageName: "Distress Beacon (Free Sample) \u2014 Frontier Comms [Sci-fi]"
   packageVersion: 1.0
-  assetPath: Assets/FrontierComms_FreeSample/Textures/Built-In_URP/FrontierCommsGroupA_Normal.png
+  assetPath: Assets/Resources/Materials/Height Maps/FrontierCommsGroupA_Normal.png
   uploadId: 779071

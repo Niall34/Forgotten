@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 89fe4bdafcce8074b901f96f3fc92b30
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 329007
+  packageName: "Distress Beacon (Free Sample) \u2014 Frontier Comms [Sci-fi]"
+  packageVersion: 1.0
+  assetPath: Assets/FrontierComms_FreeSample/Materials/HDRP/Glass_HDRP.mat
+  uploadId: 779071

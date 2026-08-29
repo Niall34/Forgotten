@@ -90,5 +90,5 @@ AssetOrigin:
   productId: 59840
   packageName: PBR Dirty Dumpster
   packageVersion: 2.0
-  assetPath: Assets/Dumpster/Textures/Dumpster_Dumpster_MetallicSmoothness.tga
+  assetPath: Assets/Resources/Materials/Height Maps/Dumpster_Dumpster_MetallicSmoothness.tga
   uploadId: 222963

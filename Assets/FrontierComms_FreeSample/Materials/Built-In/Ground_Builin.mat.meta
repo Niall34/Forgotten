@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: de1882ffc207c0743ab0979f8bcf9782
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 329007
+  packageName: "Distress Beacon (Free Sample) \u2014 Frontier Comms [Sci-fi]"
+  packageVersion: 1.0
+  assetPath: Assets/FrontierComms_FreeSample/Materials/Built-In/Ground_Builin.mat
+  uploadId: 779071

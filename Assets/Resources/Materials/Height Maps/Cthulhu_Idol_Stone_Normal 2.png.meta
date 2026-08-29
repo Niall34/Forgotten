@@ -120,6 +120,5 @@ AssetOrigin:
   productId: 324662
   packageName: Cthulhu Idol - PBR
   packageVersion: 1.0.1
-  assetPath: Assets/SnoozyRat/Cthulhu Idol - PBR/Textures/Cthulhu_Idol_Stone_Normal
-    2.png
+  assetPath: Assets/Resources/Materials/Height Maps/Cthulhu_Idol_Stone_Normal 2.png
   uploadId: 869922

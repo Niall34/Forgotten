@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d997a34a2a028bc478707a359a9c4cb9
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 56405
+  packageName: Locker
+  packageVersion: 2.1
+  assetPath: Assets/Locker_HQ/exampleScene.unity
+  uploadId: 789808

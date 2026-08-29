@@ -113,5 +113,5 @@ AssetOrigin:
   productId: 158254
   packageName: Protective suit
   packageVersion: 1.0
-  assetPath: Assets/Protection_suite/Textures/T_Protective suit_MetallicSmoothness.tga
+  assetPath: Assets/Resources/Player/Protection_suite/Textures/T_Protective suit_MetallicSmoothness.tga
   uploadId: 361326

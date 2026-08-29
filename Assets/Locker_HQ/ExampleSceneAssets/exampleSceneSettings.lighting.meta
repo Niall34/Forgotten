@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 26877db55af430d4fb77739df4e16d1c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 56405
+  packageName: Locker
+  packageVersion: 2.1
+  assetPath: Assets/Locker_HQ/ExampleSceneAssets/exampleSceneSettings.lighting
+  uploadId: 789808

@@ -133,5 +133,5 @@ AssetOrigin:
   productId: 4565
   packageName: Street Assets
   packageVersion: 1.1
-  assetPath: Assets/Street Assets/Textures/StreetAssets2_Normals.png
+  assetPath: Assets/Resources/Materials/Height Maps/StreetAssets2_Normals.png
   uploadId: 26962

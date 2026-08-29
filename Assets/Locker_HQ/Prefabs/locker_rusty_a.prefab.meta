@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2fc0f7a11803d274a85639917bd1ab12
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 56405
+  packageName: Locker
+  packageVersion: 2.1
+  assetPath: Assets/Locker_HQ/Prefabs/locker_rusty_a.prefab
+  uploadId: 789808

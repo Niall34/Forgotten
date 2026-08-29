@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: eed9e8f09928bfd44b79878a345ea9cb
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 56405
+  packageName: Locker
+  packageVersion: 2.1
+  assetPath: Assets/Locker_HQ/install_RP_Versions.txt
+  uploadId: 789808

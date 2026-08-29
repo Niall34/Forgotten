@@ -10,5 +10,5 @@ AssetOrigin:
   productId: 329007
   packageName: "Distress Beacon (Free Sample) \u2014 Frontier Comms [Sci-fi]"
   packageVersion: 1.0
-  assetPath: Assets/FrontierComms_FreeSample/Prefabs/DistressBeaconDeployed.prefab
+  assetPath: Assets/models/prefabs/DistressBeaconDeployed.prefab
   uploadId: 779071

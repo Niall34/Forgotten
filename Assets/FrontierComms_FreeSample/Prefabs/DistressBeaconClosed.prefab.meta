@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d1ffdd21609df534f82fdf02bff1ef40
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 329007
+  packageName: "Distress Beacon (Free Sample) \u2014 Frontier Comms [Sci-fi]"
+  packageVersion: 1.0
+  assetPath: Assets/FrontierComms_FreeSample/Prefabs/DistressBeaconClosed.prefab
+  uploadId: 779071

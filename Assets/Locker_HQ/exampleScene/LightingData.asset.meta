@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 16f608c0bed6df141bff6daa35d89ada
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 112000000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 56405
+  packageName: Locker
+  packageVersion: 2.1
+  assetPath: Assets/Locker_HQ/exampleScene/LightingData.asset
+  uploadId: 789808

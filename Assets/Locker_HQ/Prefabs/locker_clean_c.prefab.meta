@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0963ef4e91fd7114b8aaa3ba8205ab68
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 56405
+  packageName: Locker
+  packageVersion: 2.1
+  assetPath: Assets/Locker_HQ/Prefabs/locker_clean_c.prefab
+  uploadId: 789808

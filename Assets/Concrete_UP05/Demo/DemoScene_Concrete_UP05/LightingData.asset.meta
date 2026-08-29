@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 37d3e67e5f6acb34ea3c46e65449aea8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 112000000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255940
+  packageName: 5 Concrete Materials #1
+  packageVersion: 1.0
+  assetPath: Assets/Concrete_UP05/Demo/DemoScene_Concrete_UP05/LightingData.asset
+  uploadId: 600045

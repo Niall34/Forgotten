@@ -79,5 +79,5 @@ AssetOrigin:
   productId: 139872
   packageName: Survival Game Tools
   packageVersion: 1.1
-  assetPath: Assets/Survival Tools/Textures/survivaltools2_FirstAidKit_Normal.png
+  assetPath: Assets/Resources/Materials/Height Maps/survivaltools2_FirstAidKit_Normal.png
   uploadId: 300906
