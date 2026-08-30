@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 361b254d9e26b574ba3b83cfd62dbcde
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 158254
+  packageName: Protective suit
+  packageVersion: 1.0
+  assetPath: Assets/Protection_suite/Materials/Mat_glass.mat
+  uploadId: 361326

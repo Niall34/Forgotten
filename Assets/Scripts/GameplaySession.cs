@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class GameplaySession : MonoBehaviour
 {
-    public string playerPrefabName = "Player";
+    public string playerPrefabName = "Player/Player";
 
     private void Start()
     {

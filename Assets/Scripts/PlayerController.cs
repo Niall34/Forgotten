@@ -16,9 +16,9 @@ public class PlayerController : MonoBehaviourPun
     public float gravity = -9.81f;
 
     [Header("Camera")]
-    public Vector3 cameraOffset = new Vector3(0f, 2.2f, -3.5f);
-    public float cameraPitchMin = -20f;
-    public float cameraPitchMax = 55f;
+    public Vector3 cameraOffset = new Vector3(0f, 1.6f, 0f);
+    public float cameraPitchMin = -80f;
+    public float cameraPitchMax = 80f;
     public float lookSensitivity = 0.15f;
 
     // every spawned player adds itself here, so things that needs to find every player currently visible (like a minimap), gets it here
@@ -134,10 +134,13 @@ public class PlayerController : MonoBehaviourPun
 
     private void UpdateCameraPosition() // places the camera behind/above the player, looking at them
     {
-        Quaternion pitchRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
-        Vector3 desiredPosition = transform.position + (transform.rotation * pitchRotation * cameraOffset);
-        cameraTransform.position = desiredPosition;
-        cameraTransform.LookAt(transform.position + Vector3.up * 1.4f);
+        cameraTransform.position = transform.position + Vector3.up * cameraOffset.y;
+
+        cameraTransform.rotation = Quaternion.Euler(
+            cameraPitch,
+            transform.eulerAngles.y,
+            0f
+        );
     }
 
     private void SetupTouchControls() // builds the on-screen joystick and look surface

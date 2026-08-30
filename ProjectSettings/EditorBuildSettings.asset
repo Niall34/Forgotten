@@ -8,6 +8,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Forgotten.unity
     guid: 06427b18e50afc8488bb7250d6f231c0
+  - enabled: 1
+    path: Assets/Scenes/Forgotten_Menu.unity
+    guid: 925c3a87cc2bd4943852f9b4eb731e76
+  - enabled: 1
+    path: Assets/Scenes/Forgotten_Map.unity
+    guid: 03aa2f39b155ae14681ad3a872731250
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

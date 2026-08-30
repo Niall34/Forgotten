@@ -68,9 +68,9 @@ public class LobbyUI : MonoBehaviour
     private int lastSeenPlayerListVersion = -1;
     private bool handledMatchStarting = false;
 
-
     private void Awake() // wires up every button, loads the saved name, and shows the right starting panel
     {
+
         EnsureEventSystem();
         DontDestroyOnLoad(gameObject);
 
@@ -283,9 +283,12 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    private void OnPlayClicked() // connects (if needed) then starts a solo game
+    public void OnPlayClicked() // connects (if needed) then starts a solo game
     {
-        if (net.IsConnected)
+        wantsToHostAfterConnecting = false;
+        codeToJoinAfterConnecting = "";
+
+        if (net.InLobby)
         {
             DoPlaySolo();
         }
@@ -303,9 +306,13 @@ public class LobbyUI : MonoBehaviour
         net.PlaySolo();
     }
 
-    private void OnHostClicked() // connects (if needed) then hosts a room
+    public void OnHostClicked() // connects then hosts a room
     {
-        if (net.IsConnected)
+
+        codeToJoinAfterConnecting = "";
+        wantsToPlaySoloAfterConnecting = false;
+
+        if (net.InLobby)
         {
             DoHost();
         }
@@ -319,6 +326,7 @@ public class LobbyUI : MonoBehaviour
 
     private void DoHost() // creates the room and shows the code
     {
+
         string code = net.HostRoom();
         if (hostedCodeText != null)
         {
@@ -336,6 +344,9 @@ public class LobbyUI : MonoBehaviour
 
     private void OnJoinConfirmClicked() // connects (if needed) then joins the typed room code
     {
+        wantsToHostAfterConnecting = false;
+        wantsToPlaySoloAfterConnecting = false;
+
         string typedCode = joinCodeField.text.Trim();
         if (typedCode == "")
         {
@@ -343,7 +354,7 @@ public class LobbyUI : MonoBehaviour
             return;
         }
 
-        if (net.IsConnected)
+        if (net.InLobby)
         {
             SetStatus("Joining...");
             net.JoinRoomByCode(typedCode);

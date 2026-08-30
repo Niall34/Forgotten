@@ -19,9 +19,9 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     private const string StartedPropertyKey = "started";
 
     [Header("Scenes")]
-    public string lobbySceneName = "ForgottenLobby3D";
+    public string lobbySceneName = "Forgotten_Menu";
 
-    public string gameplaySceneName = "ForgottenGameplay";
+    public string gameplaySceneName = "Forgotten_Map";
 
     [Header("Versioning")]
     public string gameVersion = "0.1";
@@ -58,6 +58,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     private bool goStraightToGameplay = false;   // true only for solo play
     private byte lastRequestedMaxPlayers = DefaultMaxPlayers;
     private int hostRetryCount = 0;
+    private bool isConnecting = false; //stops double clicks to prevent race conditions while loading
 
     // any script that needs the network manager call this
     public static NetworkManager Bootstrap()
@@ -96,6 +97,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     // connects to photon, picking a random name if none was typed, and joins the lobby
     public void Connect(string nickname)
     {
+        Debug.Log("Connect() called"); // debug 
         if (nickname == null || nickname == "")
         {
             PhotonNetwork.NickName = "Player" + Random.Range(1000, 9999); // sets the username to something random if someone didnt input a name
@@ -111,25 +113,41 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             PhotonNetwork.OfflineMode = false;
         }
 
+        if (PhotonNetwork.InLobby)
+        {
+            return; // already fully connected and in the lobby, nothing to do
+        }
+
+        if (isConnecting)
+        {
+            return; // a connection attempt is already running, dont start a second one
+        }
+
         if (PhotonNetwork.IsConnected)
         {
-            if (PhotonNetwork.InLobby == false)
+            // socket is up but we're not in the lobby yet - only safe to join once we're
+            // actually at the master server, not mid-handshake on the name server
+            if (PhotonNetwork.NetworkClientState == ClientState.ConnectedToMasterServer)
             {
                 PhotonNetwork.JoinLobby();
             }
             return;
         }
 
+        isConnecting = true;
         PhotonNetwork.ConnectUsingSettings();
     }
 
-    public override void OnConnectedToMaster() // photon callback: fires once connected, joins the lobby next
+    public override void OnConnectedToMaster() // photon callback: this is the safe moment to join the lobby
     {
+        Debug.Log("OnConnectedToMaster fired");// debug
+        isConnecting = false;
         PhotonNetwork.JoinLobby();
     }
 
     public override void OnDisconnected(DisconnectCause cause) // photon callback: fires on disconnect
     {
+        isConnecting = false;
         ReportError("Disconnected: " + cause);
     }
 
@@ -147,18 +165,13 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     // makes up a new room code and starts creating a room using it, returns the code right away so the ui can show it immediately before the room finishes creating
     public string HostRoom()
     {
-        return HostRoom(DefaultMaxPlayers);
-    }
-
-    public string HostRoom(byte maxPlayers) // same as above, but with a custom max player count
-    {
         IsSolo = false;
         goStraightToGameplay = false;
-        lastRequestedMaxPlayers = maxPlayers;
+        lastRequestedMaxPlayers = DefaultMaxPlayers;
         hostRetryCount = 0;
 
         string code = MakeRandomCode();
-        CreateRoomWithCode(code, maxPlayers);
+        CreateRoomWithCode(code, DefaultMaxPlayers);
         return code;
     }
 
@@ -177,6 +190,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     private void CreateRoomWithCode(string code, byte maxPlayers) // tells photon to actually create the room
     {
+        Debug.Log("CreateRoomWithCode called with code " + code); // debug
+
         RoomOptions options = new RoomOptions();
         options.MaxPlayers = maxPlayers;
         options.IsVisible = false; // makes sure the only way to enter is via code input and not a list
@@ -200,16 +215,18 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         return new string(letters);
     }
 
-    public override void OnJoinedRoom() // photon callback: fires once we've joined a room
+    public override void OnJoinedRoom() // photon callback, fires once joined a room
     {
         SetLocalPlayerReady(false); // everyone always starts a fresh room un-ready
         RoomCode = PhotonNetwork.CurrentRoom.Name;
         PlayerListVersion = PlayerListVersion + 1;
     }
 
-    public override void OnCreatedRoom() // photon callback: fires once a room we created is ready, loads the next scene
+    public override void OnCreatedRoom() // photon callback fires once a room we created is ready, loads the next scene
     {
         // solo sessions go straight to gameplay
+        Debug.Log("OnCreatedRoom fired"); // debug
+
         string sceneToLoad = lobbySceneName;
         if (goStraightToGameplay)
         {
@@ -228,6 +245,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
         // error if cant create a hosted lobby
+        Debug.Log("OnCreateRoomFailed fired: " + message); // debug
         if (hostRetryCount < MaxHostRetries)
         {
             hostRetryCount = hostRetryCount + 1;

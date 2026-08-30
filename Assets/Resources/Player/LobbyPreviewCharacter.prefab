@@ -68,7 +68,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8650357492239534285}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5be53e7eef51f3a49ac7a8d23676effc, type: 3}
+  m_Script: {fileID: 11500000, guid: a5d01c4af0387b2448806ccbc1a9a34f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbyPreviewCharacter
   tagHeight: 2.1
@@ -80,6 +80,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5587148529365695568}
     m_Modifications:
+    - target: {fileID: 6319086292968066481, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: acf168fe6d300574383d3b10496a3ae3, type: 2}
     - target: {fileID: 6319086292977066565, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
