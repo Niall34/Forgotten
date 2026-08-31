@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // random spawn point for the monster so the monster spawns/respawns unpredicably, also have a backup spot just in case
-public sealed class ForgottenMonsterSpawnPoint : MonoBehaviour
+public sealed class MonsterSpawnPoint : MonoBehaviour
 {
 #if UNITY_EDITOR
     // draws a marker in the scene view so its easy to see and place

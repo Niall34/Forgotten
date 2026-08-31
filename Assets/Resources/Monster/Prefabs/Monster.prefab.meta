@@ -1,11 +1,7 @@
 fileFormatVersion: 2
-guid: f763e45ac0414d544a2eccc35a4b3a28
-MonoImporter:
+guid: ec1464e7c53c69249bd1571f07e9be4a
+PrefabImporter:
   externalObjects: {}
-  serializedVersion: 2
-  defaultReferences: []
-  executionOrder: 0
-  icon: {instanceID: 0}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
@@ -14,5 +10,5 @@ AssetOrigin:
   productId: 226029
   packageName: Skinless Zombie
   packageVersion: 1.1.0
-  assetPath: Assets/Resources/Monster/Demo Scripts/AnimationItemData.cs
+  assetPath: Assets/Resources/Monster/Prefabs/skinless zombie.prefab
   uploadId: 518731
