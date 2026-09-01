@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c5c3d934effb3dc48bb6c2eb5de38647
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 189201
+  packageName: Possessed critter
+  packageVersion: 1.0
+  assetPath: Assets/Monster_1/Animations/Run.anim
+  uploadId: 417286
