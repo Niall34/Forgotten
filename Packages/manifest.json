@@ -2,6 +2,7 @@
   "dependencies": {
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.14",
+    "com.unity.feature.characters-animation": "1.0.0",
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.postprocessing": "3.5.4",
     "com.unity.probuilder": "6.1.2",

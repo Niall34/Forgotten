@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviourPun
 {
     [Header("Movement")]
     public float moveSpeed = 4.5f;
+    public float sprintSpeed = 7.5f; // used instead of moveSpeed while the joystick is touching the sprint icon
     public float turnSpeed = 140f;
     public float gravity = -9.81f;
 
@@ -20,6 +21,9 @@ public class PlayerController : MonoBehaviourPun
     public float cameraPitchMin = -80f;
     public float cameraPitchMax = 80f;
     public float lookSensitivity = 0.15f;
+
+    [Header("Touch Controls")]
+    public GameObject touchControlsCanvasPrefab; // a hand-built Canvas with a TouchJoystick and a TouchLookSurface on it somewhere inside
 
     // every spawned player adds itself here, so things that needs to find every player currently visible (like a minimap), gets it here
     private static List<PlayerController> allPlayers = new List<PlayerController>();
@@ -73,7 +77,26 @@ public class PlayerController : MonoBehaviourPun
         }
 
         HandleLook();
-        HandleMove();
+
+        // grab the horizontal move direction from the joystick, then let gravity add the vertical part,
+        // then move the controller ONCE with both combined so we don't get double-move jitter
+        Vector3 horizontalMove = HandleMove();
+        Vector3 gravityMove = ApplyGravity();
+        controller.Move((horizontalMove + gravityMove) * Time.deltaTime);
+    }
+
+    private Vector3 ApplyGravity() // sets gravity basically so the character is grounded and animations/spawning runs smoothly, returns the vertical part only
+    {
+        if (controller.isGrounded)
+        {
+            verticalVelocity = -0.5f; // small downward push keeps isGrounded accurate on slopes
+        }
+        else
+        {
+            verticalVelocity += gravity * Time.deltaTime;
+        }
+
+        return Vector3.up * verticalVelocity;
     }
 
     private void LateUpdate() // moves the camera after this frame's movement/look is done
@@ -99,29 +122,23 @@ public class PlayerController : MonoBehaviourPun
         cameraPitch = Mathf.Clamp(cameraPitch, cameraPitchMin, cameraPitchMax);
     }
 
-    private void HandleMove() // reads the joystick and moves the CharacterController, plus gravity
+    private Vector3 HandleMove() // reads the joystick, returns just the horizontal movement (no gravity in here anymore)
     {
         Vector2 stickInput = Vector2.zero;
+        bool sprinting = false;
         if (moveJoystick != null)
         {
             stickInput = moveJoystick.Value;
+            sprinting = moveJoystick.IsSprinting;
         }
 
         Vector3 moveDirection = new Vector3(stickInput.x, 0f, stickInput.y);
         moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
-        Vector3 worldMove = transform.TransformDirection(moveDirection) * moveSpeed;
 
-        if (controller.isGrounded)
-        {
-            verticalVelocity = -0.5f; // small downward push keeps isGrounded accurate on slopes
-        }
-        else
-        {
-            verticalVelocity = verticalVelocity + (gravity * Time.deltaTime);
-        }
+        float currentSpeed = sprinting ? sprintSpeed : moveSpeed;
+        Vector3 worldMove = transform.TransformDirection(moveDirection) * currentSpeed;
 
-        worldMove.y = verticalVelocity;
-        controller.Move(worldMove * Time.deltaTime);
+        return worldMove;
     }
 
     private void SetupLocalCamera() // creates this player's own camera
@@ -132,9 +149,11 @@ public class PlayerController : MonoBehaviourPun
         UpdateCameraPosition();
     }
 
-    private void UpdateCameraPosition() // places the camera behind/above the player, looking at them
+    private void UpdateCameraPosition() // places the camera inside the player's head, nudged slightly forward so the camera dosent show the gas mask when looking around
     {
-        cameraTransform.position = transform.position + Vector3.up * cameraOffset.y;
+        Vector3 headPosition = transform.position + Vector3.up * cameraOffset.y;
+        Vector3 forwardNudge = transform.forward * 0.05f;
+        cameraTransform.position = headPosition + forwardNudge;
 
         cameraTransform.rotation = Quaternion.Euler(
             cameraPitch,
@@ -143,26 +162,13 @@ public class PlayerController : MonoBehaviourPun
         );
     }
 
-    private void SetupTouchControls() // builds the on-screen joystick and look surface
+    private void SetupTouchControls() // spawns the hand-built touch controls canvas and grabs its joystick/look surface
     {
-        GameObject canvasObject = new GameObject("Touch Controls Canvas");
-        Canvas canvas = canvasObject.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280f, 720f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        canvasObject.AddComponent<GraphicRaycaster>();
         EnsureEventSystem();
 
-        RectTransform canvasRoot = canvasObject.GetComponent<RectTransform>();
-
-        // The look surface is added first (an earlier sibling draws underneath a later
-        // one), so the joystick's own corner can sit on top and steal touches over itself.
-        lookSurface = TouchLookSurface.Create(canvasRoot);
-        moveJoystick = TouchJoystick.Create(canvasRoot, new Vector2(0f, 0f), new Vector2(0.32f, 0.42f));
+        GameObject canvasInstance = Instantiate(touchControlsCanvasPrefab);
+        moveJoystick = canvasInstance.GetComponentInChildren<TouchJoystick>();
+        lookSurface = canvasInstance.GetComponentInChildren<TouchLookSurface>();
     }
 
     private void EnsureEventSystem() // makes sure exactly one EventSystem exists in the scene

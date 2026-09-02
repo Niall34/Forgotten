@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0dd137872bec6e04aaaaa2b3e9f3c5a7
+timeCreated: 1488736730
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 84745
+  packageName: Industrial Props Kit
+  packageVersion: 1.1
+  assetPath: Assets/Industrial Props/Prefabs/WorkLight.prefab
+  uploadId: 180103

@@ -630,12 +630,9 @@ GameObject:
   m_Component:
   - component: {fileID: 363264237667080991}
   - component: {fileID: 6046854574889894245}
-  - component: {fileID: 4850532169630706798}
   - component: {fileID: 6881888506392634213}
   - component: {fileID: 7401210259450195677}
   - component: {fileID: -8956857742542745319}
-  - component: {fileID: -4891195589985215714}
-  - component: {fileID: 3580537214187033680}
   m_Layer: 0
   m_Name: Monster
   m_TagString: Untagged
@@ -677,7 +674,7 @@ Animator:
   m_GameObject: {fileID: 1027175079354532261}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: e7b3b195872dab2408896870b9dd08f5, type: 3}
-  m_Controller: {fileID: 9100000, guid: 21441a7d367db5845bc36e797e5cbec7, type: 2}
+  m_Controller: {fileID: 9100000, guid: 3d43b8c7504fcad45a3cdb9b7ea90222, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -689,42 +686,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!205 &4850532169630706798
-LODGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1027175079354532261}
-  serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.0011093915, y: 0.90601546, z: 0.022543907}
-  m_Size: 1.9749426
-  m_FadeMode: 0
-  m_AnimateCrossFading: 0
-  m_LastLODIsBillboard: 0
-  m_LODs:
-  - screenRelativeHeight: 0.25
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 9037096139816757062}
-    - renderer: {fileID: 7271144555557408967}
-  - screenRelativeHeight: 0.125
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 812553003524583414}
-    - renderer: {fileID: 2147571100911051869}
-  - screenRelativeHeight: 0.0625
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 5460493292086466763}
-    - renderer: {fileID: 6866617128736291975}
-  - screenRelativeHeight: 0.01
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 1348612578185417354}
-    - renderer: {fileID: 681558319412702924}
-  m_Enabled: 1
-  m_GlobalIlluminationLOD: 0
 --- !u!195 &6881888506392634213
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -733,9 +694,9 @@ NavMeshAgent:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1027175079354532261}
   m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
+  m_AgentTypeID: 1479372276
+  m_Radius: 0.3
+  m_Speed: 8.6
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -743,7 +704,7 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2
+  m_Height: 1.7
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
@@ -784,47 +745,8 @@ MonoBehaviour:
   chaseRange: 12
   giveUpRange: 22
   searchTime: 8
-  patrolSpeed: 2
-  chaseSpeed: 5.5
---- !u!114 &-4891195589985215714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1027175079354532261}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: PhotonUnityNetworking::Photon.Pun.PhotonView
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
---- !u!114 &3580537214187033680
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1027175079354532261}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 130028f3a5c3a6b49a601317b9c56de2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkinlessZombie.AnimationController
-  ZombieAnimator: {fileID: 0}
-  AnimationDropdown: {fileID: 0}
-  weaponPivot: {fileID: 0}
-  rightHand: {fileID: 0}
-  animationItemDatabase: []
+  patrolSpeed: 3
+  chaseSpeed: 8.6
 --- !u!1 &1162833647545388874
 GameObject:
   m_ObjectHideFlags: 0

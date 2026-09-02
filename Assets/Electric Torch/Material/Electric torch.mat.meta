@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 710d4d9447ac4b548b23dc0159a9c6c9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 224071
+  packageName: Electric Torch
+  packageVersion: 1.0
+  assetPath: Assets/Electric Torch/Material/Electric torch.mat
+  uploadId: 504638

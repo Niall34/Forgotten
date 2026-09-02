@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5587148529365695568}
   - component: {fileID: 1520066153024093764}
   - component: {fileID: 5083274628788588938}
+  - component: {fileID: -2506496856840508794}
   m_Layer: 0
   m_Name: LobbyPreviewCharacter
   m_TagString: Untagged
@@ -58,7 +59,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &5083274628788588938
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -71,7 +72,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5d01c4af0387b2448806ccbc1a9a34f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenLobbyPreviewCharacter
+  gravity: -9.81
   tagHeight: 2.1
+--- !u!95 &-2506496856840508794
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: ccd6c684af22357418455a989c6ce7a7, type: 3}
+  m_Controller: {fileID: 9100000, guid: acf168fe6d300574383d3b10496a3ae3, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &7152599098249822867
 PrefabInstance:
   m_ObjectHideFlags: 0

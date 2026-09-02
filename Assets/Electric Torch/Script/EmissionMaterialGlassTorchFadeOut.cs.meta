@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: cdb63732f7cd5444682de206601a1134
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 224071
+  packageName: Electric Torch
+  packageVersion: 1.0
+  assetPath: Assets/Electric Torch/Script/EmissionMaterialGlassTorchFadeOut.cs
+  uploadId: 504638

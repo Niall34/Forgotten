@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 380c131da968d424ab4902f967bc23d5
+timeCreated: 1488735890
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 84745
+  packageName: Industrial Props Kit
+  packageVersion: 1.1
+  assetPath: Assets/Industrial Props/Prefabs/CinderBlock.prefab
+  uploadId: 180103

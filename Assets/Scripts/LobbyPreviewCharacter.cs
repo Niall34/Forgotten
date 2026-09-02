@@ -6,9 +6,37 @@ using UnityEngine.UI;
 // forgottenlobbystage creates exactly one of these the moment a name is confirmed and destroys it the instant a real room is joined.
 public class LobbyPreviewCharacter : MonoBehaviour
 {
+    [Header("Gravity")]
+    public float gravity = -9.81f;
+
     public float tagHeight = 2.1f;
 
     private Text nameTag;
+
+    private CharacterController controller;
+    private float verticalVelocity;
+
+    private void Awake()
+    {
+        controller = GetComponent<CharacterController>();
+    }
+
+    private void Update() // sets gravity basically so the character is ground and animations/spawning runs smoothly
+    {
+        if (controller.isGrounded)
+        {
+            
+            verticalVelocity = -0.5f;
+        }
+        else
+        {
+            verticalVelocity += gravity * Time.deltaTime;
+        }
+
+        Vector3 gravityMovement = Vector3.up * verticalVelocity;
+
+        controller.Move(gravityMovement * Time.deltaTime);
+    }
 
     // sets the name tag above the characters head
     public void SetDisplayName(string displayName)

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 73297015d458fd443a63c88af5417169
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 224071
+  packageName: Electric Torch
+  packageVersion: 1.0
+  assetPath: Assets/Electric Torch/Script/ElectricTorchOnOff.cs
+  uploadId: 504638

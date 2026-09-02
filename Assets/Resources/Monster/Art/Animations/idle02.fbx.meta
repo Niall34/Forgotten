@@ -1,7 +1,14 @@
 fileFormatVersion: 2
 guid: 402b915837b52c44db3004a62cc9ac09
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226029
+  packageName: Skinless Zombie
+  packageVersion: 1.1.0
+  assetPath: Assets/Resources/Monster/Art/Animations/idle02.fbx
+  uploadId: 518731
 ModelImporter:
-  serializedVersion: 21202
+  serializedVersion: 24501
   internalIDToNameTable:
   - first:
       74: -3244159781085187821
@@ -12,6 +19,7 @@ ModelImporter:
     materialName: 0
     materialSearch: 1
     materialLocation: 1
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
@@ -19,8 +27,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 1
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: "\nClip 'metarig|idle02' has import animation warnings
       that might lower retargeting quality:\nNote: Activate translation DOF on avatar
@@ -54,7 +60,7 @@ ModelImporter:
       loop: 0
       hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 1
       loopBlendPositionY: 1
       loopBlendPositionXZ: 0
@@ -78,6 +84,7 @@ ModelImporter:
     addColliders: 0
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
+    importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
     importCameras: 1
@@ -95,6 +102,11 @@ ModelImporter:
     maxBonesPerVertex: 4
     minBoneWeight: 0.001
     optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
     meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
@@ -105,6 +117,7 @@ ModelImporter:
     secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -113,6 +126,7 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
   referencedClips: []
   importAnimation: 1
   humanDescription:
@@ -545,8 +559,7 @@ ModelImporter:
     - name: face
       parentName: spine.006
       position: {x: -0.00000004656613, y: 0.000000063261595, z: -0.000000003958121}
-      rotation: {x: -0.00000001791109, y: 0.000000056112185, z: 0.000000048489646,
-        w: 1}
+      rotation: {x: -0.00000001791109, y: 0.000000056112185, z: 0.000000048489646, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: shoulder.L
       parentName: spine.003
@@ -845,21 +858,15 @@ ModelImporter:
     hasTranslationDoF: 0
     hasExtraRoot: 1
     skeletonHasParents: 1
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: e7b3b195872dab2408896870b9dd08f5,
-    type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: e7b3b195872dab2408896870b9dd08f5, type: 3}
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 3
   humanoidOversampling: 1
   avatarSetup: 2
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226029
-  packageName: Skinless Zombie
-  packageVersion: 1.1.0
-  assetPath: Assets/Resources/Monster/Art/Animations/idle02.fbx
-  uploadId: 518731

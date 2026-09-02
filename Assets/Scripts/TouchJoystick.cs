@@ -2,87 +2,53 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-// a joystick for touch movement built at runtime, 
-// read value every frame to get a -1..1 movement direction
+// a fixed-position joystick for touch movement, sits wherever you place it in the Canvas
+// read Value every frame for -1..1 movement, and read IsSprinting to know if the handle
+// is currently actually sitting on top of the sprint icon (not just stretched to max)
 public class TouchJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
-    private const float Radius = 80f; // how far the handle can travel
+    private const float Radius = 80f; // how far the handle can travel from the center of the background ring
 
-    private RectTransform background;
-    private RectTransform handle;
-    private Vector2 dragStartPosition;
+    [SerializeField] private RectTransform background; // the ring image, drag it in via the Inspector, doesn't move
+    [SerializeField] private RectTransform handle; // the knob image, this is the one that slides around
+    [SerializeField] private RectTransform sprintIcon; // the little running icon near the edge of the ring, drag it in via the Inspector
 
     public Vector2 Value { get; private set; } // current joystick input, -1..1 on each axis
+    public bool IsSprinting { get; private set; } // only true while the handle is actually overlapping the sprint icon
 
-    // builds a joystick as a child of the given Canvas, filling the rectangle described by anchorMin/anchorMax
-    public static TouchJoystick Create(Transform canvasParent, Vector2 anchorMin, Vector2 anchorMax)
+    public void OnPointerDown(PointerEventData eventData) // touch starts: just runs the same logic as a drag straight away
     {
-        GameObject rootObject = new GameObject("Touch Joystick");
-        rootObject.transform.SetParent(canvasParent, false);
-
-        RectTransform rootRect = rootObject.AddComponent<RectTransform>();
-        rootRect.anchorMin = anchorMin;
-        rootRect.anchorMax = anchorMax;
-        rootRect.offsetMin = Vector2.zero;
-        rootRect.offsetMax = Vector2.zero;
-
-        // a invisible image is needed so the whole zone can be touched
-        Image zoneImage = rootObject.AddComponent<Image>();
-        zoneImage.color = new Color(0f, 0f, 0f, 0.01f);
-
-        TouchJoystick joystick = rootObject.AddComponent<TouchJoystick>();
-
-        GameObject backgroundObject = new GameObject("Background"); // makes the background
-        backgroundObject.transform.SetParent(rootObject.transform, false);
-        RectTransform backgroundRect = backgroundObject.AddComponent<RectTransform>();
-        backgroundRect.sizeDelta = new Vector2(Radius * 2f, Radius * 2f);
-        backgroundRect.anchorMin = new Vector2(0.5f, 0.5f);
-        backgroundRect.anchorMax = new Vector2(0.5f, 0.5f);
-        backgroundRect.anchoredPosition = Vector2.zero;
-        Image backgroundImage = backgroundObject.AddComponent<Image>();
-        backgroundImage.color = new Color(0.9f, 0.9f, 0.9f, 0.15f);
-
-        GameObject handleObject = new GameObject("Handle"); // makes the handle
-        handleObject.transform.SetParent(backgroundObject.transform, false);
-        RectTransform handleRect = handleObject.AddComponent<RectTransform>();
-        handleRect.sizeDelta = new Vector2(Radius, Radius);
-        handleRect.anchorMin = new Vector2(0.5f, 0.5f);
-        handleRect.anchorMax = new Vector2(0.5f, 0.5f);
-        handleRect.anchoredPosition = Vector2.zero;
-        Image handleImage = handleObject.AddComponent<Image>();
-        handleImage.color = new Color(0.78f, 0.62f, 0.34f, 0.85f);
-
-        joystick.background = backgroundRect;
-        joystick.handle = handleRect;
-        return joystick;
-    }
-
-    public void OnPointerDown(PointerEventData eventData) // touch starts: recentres the ring under the finger
-    {
-        // recentre the visible ring under wherever the finger first touched
-        Vector2 localPoint;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform, eventData.position, eventData.pressEventCamera, out localPoint);
-        background.anchoredPosition = localPoint;
-        dragStartPosition = localPoint;
-
         OnDrag(eventData);
     }
 
-    public void OnDrag(PointerEventData eventData) // finger is moving: updates the handle position and Value
+    public void OnDrag(PointerEventData eventData) // finger is moving: measures against the background ring, which never moves, so no feedback drift
     {
         Vector2 localPoint;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform, eventData.position, eventData.pressEventCamera, out localPoint);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(background, eventData.position, eventData.pressEventCamera, out localPoint);
 
-        Vector2 dragAmount = localPoint - dragStartPosition;
-        dragAmount = Vector2.ClampMagnitude(dragAmount, Radius);
+        Vector2 clampedOffset = Vector2.ClampMagnitude(localPoint, Radius);
+        handle.anchoredPosition = clampedOffset;
+        Value = clampedOffset / Radius;
 
-        handle.anchoredPosition = dragAmount;
-        Value = dragAmount / Radius;
+        UpdateSprintState(eventData);
     }
 
-    public void OnPointerUp(PointerEventData eventData) // touch ends: snaps the handle back to center
+    private void UpdateSprintState(PointerEventData eventData) // checks if the handle's actual screen position is overlapping the sprint icon, not just "stretched far enough"
+    {
+        if (sprintIcon == null)
+        {
+            IsSprinting = false;
+            return;
+        }
+
+        Vector2 handleScreenPoint = RectTransformUtility.WorldToScreenPoint(eventData.pressEventCamera, handle.position);
+        IsSprinting = RectTransformUtility.RectangleContainsScreenPoint(sprintIcon, handleScreenPoint, eventData.pressEventCamera);
+    }
+
+    public void OnPointerUp(PointerEventData eventData) // touch ends: snaps the handle back to center and clears sprint
     {
         handle.anchoredPosition = Vector2.zero;
         Value = Vector2.zero;
+        IsSprinting = false;
     }
 }

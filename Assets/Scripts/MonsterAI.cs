@@ -26,6 +26,7 @@ public class MonsterAI : MonoBehaviourPun
     }
 
     private NavMeshAgent agent;
+    private Animator animator; // drives Idle/Walk/Run on the Monster's Animator Controller
     private PlayerController currentTarget;
     private Vector3 lastKnownPosition;
     private float searchTimer = 0f;
@@ -34,12 +35,33 @@ public class MonsterAI : MonoBehaviourPun
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
+        animator = GetComponent<Animator>();
+    }
+
+    private void Start() // snap onto the NavMesh right away in case the spawn point is slightly off the baked surface
+    {
+        if (agent.isOnNavMesh == false)
+        {
+            NavMeshHit hit;
+            bool foundSpot = NavMesh.SamplePosition(transform.position, out hit, 5f, NavMesh.AllAreas);
+            if (foundSpot)
+            {
+                agent.Warp(hit.position);
+            }
+        }
     }
 
     private void Update()
     {
         // only the master client drives the ai, everyone else is just along for the ride
         if (PhotonNetwork.IsMasterClient == false)
+        {
+            return;
+        }
+
+        // agent isn't sitting on a navmesh yet (bad spawn position, or navmesh not baked over that spot),
+        // so bail out for this frame rather than throwing on remainingDistance/SetDestination
+        if (agent.isOnNavMesh == false)
         {
             return;
         }
@@ -56,11 +78,33 @@ public class MonsterAI : MonoBehaviourPun
         {
             RunSearch();
         }
+
+        UpdateAnimator();
     }
 
-    private void RunPatrol() // just waits around until a player gets close enough to notice
+    private void UpdateAnimator() // feeds the current movement + chase state into the Animator every frame
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        bool isChasing = state == MonsterState.Chase;
+        animator.SetFloat("Speed", agent.velocity.magnitude);
+        animator.SetBool("IsChasing", isChasing);
+    }
+
+    private void RunPatrol() // wanders between spawn points until a player gets close enough to notice
     {
         agent.speed = patrolSpeed;
+
+        // pick a new spot to wander to once we've basically arrived at the current one
+        bool pathIsReady = agent.pathPending == false;
+        bool closeToDestination = agent.remainingDistance <= agent.stoppingDistance + 0.5f;
+        if (pathIsReady && closeToDestination)
+        {
+            PickNewPatrolTarget();
+        }
 
         PlayerController closestPlayer = FindClosestPlayer();
         if (closestPlayer == null)
@@ -74,6 +118,19 @@ public class MonsterAI : MonoBehaviourPun
             currentTarget = closestPlayer;
             state = MonsterState.Chase;
         }
+    }
+
+    private void PickNewPatrolTarget() // reuses the monster spawn points as wander waypoints too, so no separate waypoint list is needed
+    {
+        MonsterSpawnPoint[] spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
+        if (spawnPoints.Length == 0)
+        {
+            return;
+        }
+
+        int randomIndex = Random.Range(0, spawnPoints.Length);
+        Transform chosenPoint = spawnPoints[randomIndex].transform;
+        agent.SetDestination(chosenPoint.position);
     }
 
     private void RunChase() // follows the target until they escape or get too far away
