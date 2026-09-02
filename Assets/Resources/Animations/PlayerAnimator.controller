@@ -23,7 +23,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 8e74eee4c4d43da4b9fd3ce2fa29ae39, type: 3}
+  m_Motion: {fileID: -203655887218126122, guid: 59e99d2a192cce64fb3806512314937d, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -40,19 +40,19 @@ AnimatorStateMachine:
   m_ChildStates:
   - serializedVersion: 1
     m_State: {fileID: 1290810244705348428}
-    m_Position: {x: 180, y: 100, z: 0}
+    m_Position: {x: 130, y: 100, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 6359041205314384154}
-    m_Position: {x: 560, y: 270, z: 0}
+    m_Position: {x: 600, y: 230, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 2448075034178127630}
-    m_Position: {x: -30, y: 370, z: 0}
+    m_Position: {x: 0, y: 430, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7345075381435650374}
-    m_Position: {x: 480, y: 70, z: 0}
+    m_Position: {x: 470, y: 10, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -6714935250729904327}
-    m_Position: {x: 350, y: 370, z: 0}
+    m_Position: {x: 350, y: 420, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -60,7 +60,7 @@ AnimatorStateMachine:
   m_StateMachineBehaviours: []
   m_AnyStatePosition: {x: 90, y: -80, z: 0}
   m_EntryPosition: {x: 80, y: 0, z: 0}
-  m_ExitPosition: {x: 560, y: -20, z: 0}
+  m_ExitPosition: {x: 490, y: -70, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: 1290810244705348428}
 --- !u!1101 &-7167271587391217573
@@ -109,7 +109,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 927846be6b8e74d41b27bb3de7331376, type: 3}
+  m_Motion: {fileID: -203655887218126122, guid: 75c448c28ab39874aab1e548b0b9ccc4, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -208,7 +208,7 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 2
-    m_ConditionEvent: Crouching
+    m_ConditionEvent: IsCrouching
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 1290810244705348428}
@@ -342,7 +342,7 @@ AnimatorController:
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
-  - m_Name: Crouching
+  - m_Name: IsCrouching
     m_Type: 4
     m_DefaultFloat: 0
     m_DefaultInt: 0
@@ -471,7 +471,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 64ca1880d482c1d4486ab6aeabef88d7, type: 3}
+  m_Motion: {fileID: -203655887218126122, guid: 54e846f7925ef7342b43c2a69f4f20ac, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -486,7 +486,7 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 1
-    m_ConditionEvent: Crouching
+    m_ConditionEvent: IsCrouching
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -6714935250729904327}

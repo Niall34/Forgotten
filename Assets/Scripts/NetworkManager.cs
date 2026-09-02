@@ -3,7 +3,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
 
-// handles alP photon PUN2 connection, room, and ready-up logic
+// handles photon PUN2 connection, room, and ready-up logic
 // other scripts like forgottenlobbyUI just check this scripts variables in
 // their own Update() method, and react when something changes
 // like when InRoom flips from false to true, that means the player just joined a room
@@ -258,7 +258,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         ReportError("Couldn't create a room right now - try again");
     }
 
-    public void LeaveRoom() // leaves the current room, if we're in one
+    public void LeaveRoom() // leaves the current room, if your in one
     {
         if (PhotonNetwork.InRoom)
         {
@@ -266,7 +266,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
-    public override void OnLeftRoom() // photon callback: fires once we've left a room
+    public override void OnLeftRoom() // photon callback: fires once left a room
     {
         RoomCode = "";
     }

@@ -1,8 +1,7 @@
 using Photon.Pun;
 using UnityEngine;
 
-// the starting point for the real gameplay scene, spawns the local player's character
-// at a random point set by forgottenplayerspawnpoint
+// the starting point for the real gameplay scene and spawns the local player's character at a random point set by playerspawnpoint
 
 public class GameplaySession : MonoBehaviour
 {

@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 // a local-only character model shown on the Main Lobby screen before hosting or joining,
 // photon rooms and players don't exist yet at this point so this can't be a real ForgottenLobbyCharacter 
-// forgottenlobbystage creates exactly one of these the moment a name is confirmed and destroys it the instant a real room is joined.
+// forgottenlobbystage creates exactly one of these the moment a name is confirmed and destroys it the instant a real room is joined
 public class LobbyPreviewCharacter : MonoBehaviour
 {
     [Header("Gravity")]

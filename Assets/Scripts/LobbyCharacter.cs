@@ -2,8 +2,7 @@ using Photon.Pun;
 using UnityEngine;
 using UnityEngine.UI;
 
-// this is for the lobby characters when playing with other people, one has a floating name and ready-state label
-// which update themselves automatically by reading straight from photon
+// this is for the lobby characters when playing with other people, one has a floating name and ready-state label which update themselves automatically by reading straight from photon
 [RequireComponent(typeof(PhotonView))]
 public class LobbyCharacter : MonoBehaviourPun
 {

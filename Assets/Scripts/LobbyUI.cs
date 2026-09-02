@@ -5,8 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 
-// controls the whole 2D menu, entering your name, then hosting/joining/playing solo and
-// the ready up screens once you're in a room
+// controls the whole UI menus for the lobby screen
 
 public class LobbyUI : MonoBehaviour
 {

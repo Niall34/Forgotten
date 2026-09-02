@@ -18,6 +18,15 @@ public class MonsterAI : MonoBehaviourPun
     public float patrolSpeed = 2f;
     public float chaseSpeed = 5.5f;
 
+    [Header("Patrol")]
+    public float wanderRadius = 15f; // how far from its current spot the monster picks its next wander target
+    public float patrolPauseMin = 1f; // stands still for a bit at each waypoint instead of instantly moving on, feels less robotic
+    public float patrolPauseMax = 4f;
+    private const int WanderSampleAttempts = 5; // tries a few random spots before giving up and falling back to a spawn point
+
+    private bool isPausedAtWaypoint = false;
+    private float patrolPauseTimer = 0f;
+
     private enum MonsterState
     {
         Patrol,
@@ -94,16 +103,29 @@ public class MonsterAI : MonoBehaviourPun
         animator.SetBool("IsChasing", isChasing);
     }
 
-    private void RunPatrol() // wanders between spawn points until a player gets close enough to notice
+    private void RunPatrol() // wanders around near its spawn points, pausing briefly at each spot, until a player gets close enough to notice
     {
         agent.speed = patrolSpeed;
 
-        // pick a new spot to wander to once we've basically arrived at the current one
-        bool pathIsReady = agent.pathPending == false;
-        bool closeToDestination = agent.remainingDistance <= agent.stoppingDistance + 0.5f;
-        if (pathIsReady && closeToDestination)
+        if (isPausedAtWaypoint)
         {
-            PickNewPatrolTarget();
+            patrolPauseTimer -= Time.deltaTime;
+            if (patrolPauseTimer <= 0f)
+            {
+                isPausedAtWaypoint = false;
+                PickNewPatrolTarget();
+            }
+        }
+        else
+        {
+            // arrived at the current wander target, so stop and pause for a bit before picking the next one
+            bool pathIsReady = agent.pathPending == false;
+            bool closeToDestination = agent.remainingDistance <= agent.stoppingDistance + 0.5f;
+            if (pathIsReady && closeToDestination)
+            {
+                isPausedAtWaypoint = true;
+                patrolPauseTimer = Random.Range(patrolPauseMin, patrolPauseMax);
+            }
         }
 
         PlayerController closestPlayer = FindClosestPlayer();
@@ -116,11 +138,12 @@ public class MonsterAI : MonoBehaviourPun
         if (distance <= chaseRange)
         {
             currentTarget = closestPlayer;
+            isPausedAtWaypoint = false; // drop whatever pause we were mid-way through, chasing takes priority
             state = MonsterState.Chase;
         }
     }
 
-    private void PickNewPatrolTarget() // reuses the monster spawn points as wander waypoints too, so no separate waypoint list is needed
+    private void PickNewPatrolTarget() // picks a random spot on the NavMesh somewhere around a random spawn point, instead of beelining straight to the spawn point itself
     {
         MonsterSpawnPoint[] spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
         if (spawnPoints.Length == 0)
@@ -129,8 +152,25 @@ public class MonsterAI : MonoBehaviourPun
         }
 
         int randomIndex = Random.Range(0, spawnPoints.Length);
-        Transform chosenPoint = spawnPoints[randomIndex].transform;
-        agent.SetDestination(chosenPoint.position);
+        Vector3 anchor = spawnPoints[randomIndex].transform.position;
+
+        for (int attempt = 0; attempt < WanderSampleAttempts; attempt++)
+        {
+            Vector3 randomOffset = Random.insideUnitSphere * wanderRadius;
+            randomOffset.y = 0f; // keep the sample flat, height gets handled by the NavMesh sample below
+            Vector3 candidate = anchor + randomOffset;
+
+            NavMeshHit hit;
+            bool foundSpot = NavMesh.SamplePosition(candidate, out hit, wanderRadius, NavMesh.AllAreas);
+            if (foundSpot)
+            {
+                agent.SetDestination(hit.position);
+                return;
+            }
+        }
+
+        // every random sample missed the navmesh, just fall back to the spawn point itself
+        agent.SetDestination(anchor);
     }
 
     private void RunChase() // follows the target until they escape or get too far away

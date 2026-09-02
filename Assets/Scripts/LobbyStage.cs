@@ -91,7 +91,7 @@ public class LobbyStage : MonoBehaviour
     private void SpawnLocalCharacter() // spawns the real character at a seat based on the player's actor number
     {
         // player numbers start at 1, so this gives every player a different spawn point and
-        // keeps the same player in the same seat if they rejoin - if you've got more players
+        // keeps the same player in the same seat if they rejoin, if you've got more players
         // than spawn points placed this will throw, so make sure you've placed enough
         LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
         int mySeat = PhotonNetwork.LocalPlayer.ActorNumber - 1;
