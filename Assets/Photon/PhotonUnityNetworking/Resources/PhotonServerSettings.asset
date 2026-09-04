@@ -42,6 +42,8 @@ MonoBehaviour:
   - SetFlashLightState
   - SetCrouchState
   - SetFlashlightState
+  - PlayAttackRPC
+  - SetVisibleRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

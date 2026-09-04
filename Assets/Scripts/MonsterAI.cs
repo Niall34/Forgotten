@@ -1,3 +1,4 @@
+using System.Collections;
 using Photon.Pun;
 using UnityEngine;
 using UnityEngine.AI;
@@ -10,9 +11,11 @@ using UnityEngine.AI;
 public class MonsterAI : MonoBehaviourPun
 {
     [Header("Detection")]
-    public float chaseRange = 12f; // how close a player needs to be before the chase starts
-    public float giveUpRange = 22f; // how far away before the monster loses interest mid chase
+    public float chaseRange = 12f; // baseline detection range with a silent, dark player
+    public float giveUpRange = 24f; // how far away before the monster loses interest mid chase - bumped up slightly so it's comfortably above the max possible detection range below
     public float searchTime = 8f; // how long it searches the last known spot before giving up
+    public float maxNoiseDetectionBonus = 4f; // extra range added on top of chaseRange when a player is at full movement noise (sprinting) - kept modest so sprinting doesn't feel like an instant death sentence
+    public float flashlightDetectionBonus = 4f; // extra range added on top of that while the player's flashlight is on
 
     [Header("Movement")]
     public float patrolSpeed = 2f;
@@ -26,6 +29,23 @@ public class MonsterAI : MonoBehaviourPun
 
     private bool isPausedAtWaypoint = false;
     private float patrolPauseTimer = 0f;
+
+    [Header("Random Despawn")]
+    public float despawnCheckInterval = 15f; // how often, in seconds, it rolls the dice on vanishing (only while patrolling, never mid-chase)
+    [Range(0f, 1f)] public float despawnChance = 0.15f; // chance per check that it actually vanishes this time
+    public float despawnHiddenDuration = 6f; // how long it stays gone before reappearing somewhere else
+
+    private Renderer[] monsterRenderers; // hidden/shown together instead of disabling the whole GameObject, which would mess with the NavMeshAgent
+    private bool isDespawned = false;
+    private float despawnCheckTimer = 0f;
+
+    [Header("Attack")]
+    public float attackRange = 2f; // how close to the target before it attacks instead of continuing to chase
+    public float attackAnimationDuration = 1.2f; // how long to let the attack animation play before vanishing
+    public float detectionGraceAfterRespawn = 5f; // after reappearing (from an attack OR a random despawn), it can't re-detect anyone for this long - stops an instant re-attack loop
+
+    private bool isAttacking = false;
+    private float detectionGraceTimer = 0f;
 
     private enum MonsterState
     {
@@ -45,6 +65,8 @@ public class MonsterAI : MonoBehaviourPun
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
+        monsterRenderers = GetComponentsInChildren<Renderer>();
+        agent.stoppingDistance = attackRange * 0.9f; // naturally slows down as it approaches attack range, instead of pathing all the way onto the player before the code catches up
     }
 
     private void Start() // snap onto the NavMesh right away in case the spawn point is slightly off the baked surface
@@ -75,9 +97,16 @@ public class MonsterAI : MonoBehaviourPun
             return;
         }
 
+        // frozen while hidden or mid-attack - the relevant coroutine handles bringing it back, nothing else should run in the meantime
+        if (isDespawned || isAttacking)
+        {
+            return;
+        }
+
         if (state == MonsterState.Patrol)
         {
             RunPatrol();
+            CheckForRandomDespawn();
         }
         else if (state == MonsterState.Chase)
         {
@@ -88,7 +117,55 @@ public class MonsterAI : MonoBehaviourPun
             RunSearch();
         }
 
+        if (detectionGraceTimer > 0f)
+        {
+            detectionGraceTimer -= Time.deltaTime;
+        }
+
         UpdateAnimator();
+    }
+
+    private void CheckForRandomDespawn() // only rolls the dice while patrolling - vanishing mid-chase would feel like a bug rather than a spooky moment
+    {
+        despawnCheckTimer += Time.deltaTime;
+        if (despawnCheckTimer < despawnCheckInterval)
+        {
+            return;
+        }
+
+        despawnCheckTimer = 0f;
+        if (Random.value < despawnChance)
+        {
+            StartCoroutine(DespawnAndRespawnRoutine());
+        }
+    }
+
+    private IEnumerator DespawnAndRespawnRoutine() // vanishes for a bit, then reappears at a random spawn point
+    {
+        isDespawned = true;
+        agent.isStopped = true;
+        photonView.RPC(nameof(SetVisibleRPC), RpcTarget.All, false);
+
+        yield return new WaitForSeconds(despawnHiddenDuration);
+
+        Vector3 respawnPosition = GetRandomSpawnPointPosition();
+        if (respawnPosition != transform.position) // GetRandomSpawnPointPosition returns transform.position itself if there's nowhere to go
+        {
+            agent.Warp(respawnPosition);
+        }
+
+        photonView.RPC(nameof(SetVisibleRPC), RpcTarget.All, true);
+        agent.isStopped = false;
+        isDespawned = false;
+    }
+
+    [PunRPC]
+    private void SetVisibleRPC(bool visible) // runs on every client so the monster actually disappears/reappears for everyone, not just the master client
+    {
+        foreach (Renderer monsterRenderer in monsterRenderers)
+        {
+            monsterRenderer.enabled = visible;
+        }
     }
 
     private void UpdateAnimator() // feeds the current movement + chase state into the Animator every frame
@@ -129,18 +206,32 @@ public class MonsterAI : MonoBehaviourPun
         }
 
         PlayerController closestPlayer = FindClosestPlayer();
-        if (closestPlayer == null)
+        if (closestPlayer == null || detectionGraceTimer > 0f)
         {
             return;
         }
 
         float distance = Vector3.Distance(transform.position, closestPlayer.transform.position);
-        if (distance <= chaseRange)
+        float effectiveRange = GetEffectiveDetectionRange(closestPlayer);
+        if (distance <= effectiveRange)
         {
             currentTarget = closestPlayer;
             isPausedAtWaypoint = false; // drop whatever pause we were mid-way through, chasing takes priority
             state = MonsterState.Chase;
         }
+    }
+
+    private float GetEffectiveDetectionRange(PlayerController player) // the noisier and more lit-up a player is, the further away the monster can pinpoint them
+    {
+        float range = chaseRange;
+        range += player.MovementNoiseLevel * maxNoiseDetectionBonus;
+
+        if (player.IsFlashlightOn)
+        {
+            range += flashlightDetectionBonus;
+        }
+
+        return range;
     }
 
     private void PickNewPatrolTarget() // picks a random spot on the NavMesh somewhere around a random spawn point, instead of beelining straight to the spawn point itself
@@ -173,7 +264,7 @@ public class MonsterAI : MonoBehaviourPun
         agent.SetDestination(anchor);
     }
 
-    private void RunChase() // follows the target until they escape or get too far away
+    private void RunChase() // follows the target until it's close enough to attack, or gets too far away and gives up
     {
         agent.speed = chaseSpeed;
 
@@ -184,6 +275,13 @@ public class MonsterAI : MonoBehaviourPun
         }
 
         float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
+
+        if (distance <= attackRange)
+        {
+            StartCoroutine(AttackAndRespawnRoutine());
+            return;
+        }
+
         if (distance > giveUpRange)
         {
             lastKnownPosition = currentTarget.transform.position;
@@ -196,6 +294,33 @@ public class MonsterAI : MonoBehaviourPun
         agent.SetDestination(currentTarget.transform.position);
     }
 
+    private IEnumerator AttackAndRespawnRoutine() // plays the attack animation, then reuses the despawn/respawn flow to vanish and reappear elsewhere
+    {
+        isAttacking = true;
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero; // isStopped alone can still let it coast forward a bit on leftover momentum, this kills that immediately
+        agent.ResetPath(); // also drop the current path entirely so there's nothing left for it to resume
+        photonView.RPC(nameof(PlayAttackRPC), RpcTarget.All);
+
+        yield return new WaitForSeconds(attackAnimationDuration);
+
+        // reuse the exact same hide-then-relocate flow the random despawn uses, no need to duplicate it
+        yield return StartCoroutine(DespawnAndRespawnRoutine());
+
+        currentTarget = null;
+        state = MonsterState.Patrol;
+        isAttacking = false;
+    }
+
+    [PunRPC]
+    private void PlayAttackRPC() // runs on every client so the attack animation actually plays for everyone watching, not just the master client
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+    }
+
     private void RunSearch() // goes to where the player was last seen and waits a bit before giving up
     {
         agent.speed = patrolSpeed;
@@ -204,10 +329,11 @@ public class MonsterAI : MonoBehaviourPun
 
         // keep an eye out in case someone wanders back into range while searching
         PlayerController closestPlayer = FindClosestPlayer();
-        if (closestPlayer != null)
+        if (closestPlayer != null && detectionGraceTimer <= 0f)
         {
             float distance = Vector3.Distance(transform.position, closestPlayer.transform.position);
-            if (distance <= chaseRange)
+            float effectiveRange = GetEffectiveDetectionRange(closestPlayer);
+            if (distance <= effectiveRange)
             {
                 currentTarget = closestPlayer;
                 state = MonsterState.Chase;
@@ -243,14 +369,19 @@ public class MonsterAI : MonoBehaviourPun
     // this is just temporary until I write a script where it wonders and looks for the player and waits peridodically before spawning in again
     private void Relocate() // teleports to a random monster spawn point after giving up a chase
     {
+        Vector3 position = GetRandomSpawnPointPosition();
+        agent.Warp(position); // teleport, not walk, since the chase already gave up
+    }
+
+    private Vector3 GetRandomSpawnPointPosition() // picks a random MonsterSpawnPoint's position - shared by Relocate() and the random despawn/respawn
+    {
         MonsterSpawnPoint[] spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
         if (spawnPoints.Length == 0)
         {
-            return; // nowhere to relocate to, just keep going from wherever it already is
+            return transform.position; // nowhere to go, just stay put
         }
 
         int randomIndex = Random.Range(0, spawnPoints.Length);
-        Transform chosenPoint = spawnPoints[randomIndex].transform;
-        agent.Warp(chosenPoint.position); // teleport, not walk, since the chase already gave up
+        return spawnPoints[randomIndex].transform.position;
     }
 }

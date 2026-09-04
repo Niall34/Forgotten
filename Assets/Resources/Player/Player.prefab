@@ -1,5 +1,37 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2144651090303941993
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8987578462997009915}
+  m_Layer: 0
+  m_Name: TorchAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8987578462997009915
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2144651090303941993}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.085, y: -0.004, z: -0.121}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6868344216086217471}
+  m_Father: {fileID: 5587148529365695568}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8650357492239534285
 GameObject:
   m_ObjectHideFlags: 0
@@ -34,6 +66,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3815328967247126742}
+  - {fileID: 8987578462997009915}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5156771503677926302
@@ -54,7 +87,8 @@ MonoBehaviour:
   Synchronization: 3
   OwnershipTransfer: 0
   observableSearch: 2
-  ObservedComponents: []
+  ObservedComponents:
+  - {fileID: 5974925283950154236}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -95,23 +129,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb560074fd1f33845b01a01c50fe9f90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 4.5
-  sprintSpeed: 8.5
+  moveSpeed: 3
+  sprintSpeed: 8.6
   turnSpeed: 140
   gravity: -9.81
-  crouchSpeed: 2
+  crouchSpeed: 2.5
   standingHeight: 2
   crouchingHeight: 1.2
   crouchCameraHeight: 1
   cameraCrouchLerpSpeed: 8
-  cameraOffset: {x: 0, y: 1.6, z: 0}
-  standingForwardOffset: 0.15
+  cameraOffset: {x: 0.15, y: 1.6, z: 0}
+  standingForwardOffset: 0.3
   crouchForwardOffset: 0.3
   cameraPitchMin: -20
   cameraPitchMax: 55
   lookSensitivity: 0.15
   touchControlsCanvasPrefab: {fileID: 4995645851406762100, guid: 1a4fc5c3ee1afaf4da7b1327ee34fc80, type: 3}
   animator: {fileID: 209546359802999642}
+  headBone: {fileID: 3815328967247126744}
+  headLookAxisSign: -1
+  torchAnchor: {fileID: 8987578462997009915}
 --- !u!95 &209546359802999642
 Animator:
   serializedVersion: 7
@@ -140,7 +177,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 3815328967247126744}
+    m_TransformParent: {fileID: 8987578462997009915}
     m_Modifications:
     - target: {fileID: -6194355465214790693, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Enabled
@@ -150,6 +187,10 @@ PrefabInstance:
       propertyPath: torchLight
       value: 
       objectReference: {fileID: 6402988173902909076}
+    - target: {fileID: 48885941002366607, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_AdditionalLightsShadowResolutionTier
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7021590931246295734, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Name
       value: Electric Torch LowPoly
@@ -160,7 +201,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.5
+      value: 0.49999985
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalScale.y
@@ -168,35 +209,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.3
+      value: 0.5999996
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.0498
+      value: -0.036000125
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.0103
+      value: 1.7442291
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.1151
+      value: 0.08326382
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7001731
+      value: 0.73605645
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.7119704
+      value: 0.020786077
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.0063293055
+      value: 0.009673953
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.053063147
+      value: -0.6765318
       objectReference: {fileID: 0}
     - target: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -210,33 +251,77 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 106.576
       objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.00002797204
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.029895596
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.11710206
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9991424
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.00000008940694
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.00000004097818
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.041406352
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899621, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -4.746
+      objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Type
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Range
-      value: 20
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Color.b
-      value: 0.48873615
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Color.g
-      value: 0.7810004
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Color.r
-      value: 0.98490566
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_Intensity
-      value: 10
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_SpotAngle
+      value: 46.305786
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+      propertyPath: m_InnerSpotAngle
+      value: 8.0904
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_ColorTemperature
-      value: 2390
+      value: 2600
       objectReference: {fileID: 0}
     - target: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_UseColorTemperature
@@ -337,6 +422,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerFlashLight
   torchLight: {fileID: 6402988173902909076}
   onIntensity: 2.5
+  flickerSpeed: 6
+  flickerMinIntensity: 298
 --- !u!108 &6402988173902909076 stripped
 Light:
   m_CorrespondingSourceObject: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
@@ -454,10 +541,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 7665568731069052785, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 6319086292977066571, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6868344216086217471}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
 --- !u!4 &3815328967247126742 stripped

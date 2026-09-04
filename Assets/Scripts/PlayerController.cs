@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 [RequireComponent(typeof(PhotonView))]
 [RequireComponent(typeof(CharacterController))]
-public class PlayerController : MonoBehaviourPun
+public class PlayerController : MonoBehaviourPun, IPunObservable
 {
     [Header("Movement")]
     public float moveSpeed = 4.5f;
@@ -35,7 +35,11 @@ public class PlayerController : MonoBehaviourPun
     public GameObject touchControlsCanvasPrefab; // a hand-built Canvas with a TouchJoystick and a TouchLookSurface on it somewhere inside
 
     [Header("Animation")]
-    [SerializeField] private Animator animator; // dragged the Animator in manually cuz GetComponentInChildren was grabbing the wrong one
+    [SerializeField] private Animator animator; // drag Player1's Animator in manually, GetComponentInChildren was grabbing the wrong one
+    [SerializeField] private Transform headBone; // drag the actual head bone in here, NOT the camera - the head tilts to match where the camera is looking
+    public float headLookAxisSign = -1f; // some rigs need this flipped to +1 if the head bends the wrong way, just flip the sign if so
+
+    [SerializeField] private Transform torchAnchor; // an empty object parented to the ROOT (not a bone) - the torch lives under this instead of the hand now, so it aims with the camera but doesn't inherit arm-swing animation
 
     // every spawned player adds itself here, so things that needs to find every player currently visible (like a minimap), gets it here
     private static List<PlayerController> allPlayers = new List<PlayerController>();
@@ -57,6 +61,16 @@ public class PlayerController : MonoBehaviourPun
     private TouchLookSurface lookSurface;
     private PlayerFlashLight flashlight; // found once in SetupTouchControls, reused by ToggleFlashlight later
     private bool isFlashlightOn = false;
+    public bool IsFlashlightOn // lets the monster check if this player's light is on without needing its own reference to the flashlight
+    {
+        get { return isFlashlightOn; }
+    }
+
+    private float movementNoiseLevel = 0f; // computed on the owning client each frame, synced to everyone else via OnPhotonSerializeView below
+    public float MovementNoiseLevel // 0 = silent (crouching, or standing still), 1 = loud/very noticeable (sprinting) - the monster uses this to gauge how easily it can pinpoint this player
+    {
+        get { return movementNoiseLevel; }
+    }
 
     private void Awake() // grabs the CharacterController off this object
     {
@@ -97,12 +111,31 @@ public class PlayerController : MonoBehaviourPun
 
         HandleLook();
 
-        // grab the horizontal move direction from the joystick, then let gravity add the vertical part, then move the controller ONCE with both combined so we don't get double-move jitter
+        // grab the horizontal move direction from the joystick, then let gravity add the vertical part,
+        // then move the controller ONCE with both combined so we don't get double-move jitter
         Vector3 horizontalMove = HandleMove();
         Vector3 gravityMove = ApplyGravity();
         controller.Move((horizontalMove + gravityMove) * Time.deltaTime);
 
+        UpdateMovementNoiseLevel();
         UpdateAnimator();
+    }
+
+    private void UpdateMovementNoiseLevel() // works out how "loud" this player currently is, only meaningful on the owner - gets synced to everyone else below
+    {
+        if (isCrouching)
+        {
+            movementNoiseLevel = 0f; // crouching is meant to be the sneaky option, no noise regardless of stick input
+            return;
+        }
+
+        if (moveJoystick == null)
+        {
+            movementNoiseLevel = 0f;
+            return;
+        }
+
+        movementNoiseLevel = moveJoystick.IsSprinting ? 1f : moveJoystick.Value.magnitude;
     }
 
     private void UpdateAnimator() // feeds a normalized 0-1 Speed into the Animator, capped so a max-stretch walk can't accidentally cross into the Sprint tier
@@ -134,11 +167,49 @@ public class PlayerController : MonoBehaviourPun
         return Vector3.up * verticalVelocity;
     }
 
-    private void LateUpdate() // moves the camera after this frame's movement/look is done
+    private void LateUpdate() // moves the camera after this frame's movement/look is done, and tilts the head to match - runs for every client, not just the owner
     {
         if (photonView.IsMine && playerCamera != null)
         {
             UpdateCameraPosition();
+        }
+
+        ApplyHeadLook(); // runs on everyone's copy, using either our own cameraPitch or the synced value from the owner
+        ApplyTorchAim(); // same idea, but for the torch instead of the head
+    }
+
+    private void ApplyTorchAim() // aims the torch up/down with cameraPitch - "around" (yaw) already happens for free since torchAnchor is a child of the root, which turns when you look left/right
+    {
+        if (torchAnchor == null)
+        {
+            return;
+        }
+
+        torchAnchor.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
+    }
+
+    private void ApplyHeadLook() // tilts the head bone to match cameraPitch, applied AFTER the Animator has already posed the character this frame
+    {
+        if (headBone == null)
+        {
+            return;
+        }
+
+        // stack this rotation on top of whatever pose the Animator just set, rather than replacing it outright
+        headBone.localRotation = headBone.localRotation * Quaternion.Euler(headLookAxisSign * cameraPitch, 0f, 0f);
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) // syncs cameraPitch and movementNoiseLevel to everyone else, since only the owner actually computes these
+    {
+        if (stream.IsWriting)
+        {
+            stream.SendNext(cameraPitch);
+            stream.SendNext(movementNoiseLevel);
+        }
+        else
+        {
+            cameraPitch = (float)stream.ReceiveNext();
+            movementNoiseLevel = (float)stream.ReceiveNext();
         }
     }
 
@@ -157,7 +228,7 @@ public class PlayerController : MonoBehaviourPun
         cameraPitch = Mathf.Clamp(cameraPitch, cameraPitchMin, cameraPitchMax);
     }
 
-    public void ToggleCrouch() 
+    public void ToggleCrouch() // hook this up to your touch UI crouch button's OnClick
     {
         if (photonView.IsMine == false)
         {
@@ -182,7 +253,7 @@ public class PlayerController : MonoBehaviourPun
         controller.center = new Vector3(controller.center.x, targetHeight * 0.5f, controller.center.z);
     }
 
-    public void ToggleFlashlight() 
+    public void ToggleFlashlight() // hook this up to your touch UI flashlight button's OnClick
     {
         if (photonView.IsMine == false)
         {
