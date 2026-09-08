@@ -5,7 +5,8 @@ namespace Forgotten.Player
     {
 	[Header("Health Value")]
 	[SerializeField] private int maxHealth = 100;
-	
+	[SerializeField] private int injuredHealthThreshold = 50;
+	[SerializeField] private int deadHealthThreshold = 0;
 
 	public int CurrentHealth { get; set; }
 
