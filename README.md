@@ -1,13 +1,8 @@
 # Forgotten settings
 
-This branch contains the settings module exported from the open Forgotten Unity
-project. It does not contain the lobby scene, map, characters, monsters, audio files,
-or multiplayer implementation. This export is published to the `Settings` branch in
+This branch contains the settings module from Forgotten Unity
+project. This export is published to the `Settings` branch in
 the team's [Niall34/Forgotten repository](https://github.com/Niall34/Forgotten).
-The team's other branches are unchanged.
-
-This is a source module to import into an existing Unity project, not a complete
-project that can be opened directly in Unity Hub.
 
 ## Included settings
 
