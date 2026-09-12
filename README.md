@@ -2,7 +2,9 @@
 
 This branch contains the settings module exported from the open Forgotten Unity
 project. It does not contain the lobby scene, map, characters, monsters, audio files,
-or multiplayer implementation. The complete game remains on the `main` branch.
+or multiplayer implementation. This export is published to the `Settings` branch in
+the team's [Niall34/Forgotten repository](https://github.com/Niall34/Forgotten).
+The team's other branches are unchanged.
 
 This is a source module to import into an existing Unity project, not a complete
 project that can be opened directly in Unity Hub.
@@ -78,6 +80,6 @@ Those settings passed Unity compilation and isolated Play Mode checks for saving
 discarding, reset confirmation, tab navigation and graphics choices. This export
 was checked against those source files; no new iPhone build was performed.
 
-This branch records the settings-only export. Earlier implementation history stays
-on `main`. The module was developed with AI assistance; its feature owner should be
+This branch records the settings-only export. Earlier implementation history is
+linked above in the original repository. The module was developed with AI assistance; its feature owner should be
 able to explain and demonstrate the code and the Unity systems it uses.
