@@ -41,6 +41,9 @@ public class MonsterAI : MonoBehaviourPun
 
     [Header("Attack")]
     public float attackRange = 2f; // how close to the target before it attacks instead of continuing to chase
+    public int attackDamage = 10;
+    public float attackCooldown = 1.5f;
+    private float lastAttackTime = -999f;
     public float attackAnimationDuration = 1.2f; // how long to let the attack animation play before vanishing
     public float detectionGraceAfterRespawn = 5f; // after reappearing (from an attack OR a random despawn), it can't re-detect anyone for this long - stops an instant re-attack loop
 
@@ -307,6 +310,7 @@ public class MonsterAI : MonoBehaviourPun
         }
 
         photonView.RPC(nameof(PlayAttackRPC), RpcTarget.All);
+        TryAttack();
 
         yield return new WaitForSeconds(attackAnimationDuration);
 
@@ -316,6 +320,13 @@ public class MonsterAI : MonoBehaviourPun
         currentTarget = null;
         state = MonsterState.Patrol;
         isAttacking = false;
+    }
+
+    private void TryAttack()
+    {
+        if (currentTarget == null || Time.time - lastAttackTime < attackCooldown) return;
+        lastAttackTime = Time.time;
+        currentTarget.photonView.RPC("TakeDamage", RpcTarget.All, attackDamage);
     }
 
     [PunRPC]

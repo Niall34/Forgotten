@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 694ecb11d23acaf4b8d3a670d6ef04e9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 199519
+  packageName: Industrial Equipment - Electric Motor
+  packageVersion: 0.0.2
+  assetPath: Assets/Toasty Planet Games/Industrial Equipment - Electric Motor/Scripts/RotateShaft.cs
+  uploadId: 453375

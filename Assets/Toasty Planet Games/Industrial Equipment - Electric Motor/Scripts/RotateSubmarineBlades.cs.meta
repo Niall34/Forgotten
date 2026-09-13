@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1e0a326b37389fd43858e84ab3698d70
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 199519
+  packageName: Industrial Equipment - Electric Motor
+  packageVersion: 0.0.2
+  assetPath: Assets/Toasty Planet Games/Industrial Equipment - Electric Motor/Scripts/RotateSubmarineBlades.cs
+  uploadId: 453375

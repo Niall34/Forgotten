@@ -44,6 +44,10 @@ MonoBehaviour:
   - SetFlashlightState
   - PlayAttackRPC
   - SetVisibleRPC
+  - RPC_Destroyed
+  - RPC_PickedUp
+  - RPC_PieceInstalled
+  - RPC_PlayerWon
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

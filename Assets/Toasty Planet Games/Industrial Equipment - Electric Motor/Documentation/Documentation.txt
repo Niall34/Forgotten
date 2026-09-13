@@ -1,0 +1,1 @@
+To use the provided RotateShaft script simply add it to the game object you want to rotate. Then drag the gameobject into the list field.
