@@ -3,6 +3,7 @@ using Photon.Pun;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Forgotten.Player;
 
 // handles movement and camera look using a touch joystick and drag-to-look
 
@@ -50,6 +51,10 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     private CharacterController controller;
     private Camera playerCamera;
+    private PlayerHealthStateMachine health;
+    private ForgottenSettingsSnapshot settings;
+    private GameObject controlsInstance;
+    public bool HasEscaped { get; private set; }
     private Transform cameraTransform;
     private float cameraPitch = 0f;
     private float verticalVelocity = 0f;
@@ -75,6 +80,8 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     private void Awake() // grabs the CharacterController off this object
     {
         controller = GetComponent<CharacterController>();
+        health = GetComponent<PlayerHealthStateMachine>();
+        if (health == null) health = gameObject.AddComponent<PlayerHealthStateMachine>();
         currentCameraHeight = cameraOffset.y;
         currentForwardOffset = standingForwardOffset;
     }
@@ -93,8 +100,13 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (photonView.IsMine)
         {
+            settings = ForgottenGameSettings.Load();
             SetupLocalCamera();
             SetupTouchControls();
+            var spectator = gameObject.AddComponent<SpectatorController>();
+            spectator.SetCamera(playerCamera);
+            health.Configure(this, spectator);
+            if (GetComponent<PlayerInventory>() == null) gameObject.AddComponent<PlayerInventory>();
         }
         else
         {
@@ -221,10 +233,11 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
             lookDelta = lookSurface.ConsumeLookDelta();
         }
 
-        float yawAmount = lookDelta.x * lookSensitivity * turnSpeed * Time.deltaTime * 0.3f;
+        float sensitivity = lookSensitivity * settings.LookSensitivity;
+        float yawAmount = lookDelta.x * sensitivity * turnSpeed * Time.deltaTime * 0.3f;
         transform.Rotate(Vector3.up, yawAmount, Space.World);
 
-        cameraPitch = cameraPitch - (lookDelta.y * lookSensitivity);
+        cameraPitch -= lookDelta.y * sensitivity * (settings.InvertLook ? -1f : 1f);
         cameraPitch = Mathf.Clamp(cameraPitch, cameraPitchMin, cameraPitchMax);
     }
 
@@ -297,15 +310,25 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
             currentSpeed = sprinting ? sprintSpeed : moveSpeed;
         }
 
-        Vector3 worldMove = transform.TransformDirection(moveDirection) * currentSpeed;
+        Vector3 worldMove = transform.TransformDirection(moveDirection) * currentSpeed * health.SpeedMultiplier;
 
         return worldMove;
     }
 
     private void SetupLocalCamera() // creates this player's own camera
     {
+        // Scene preview cameras must not compete with the local player's view/audio.
+        foreach (AudioListener listener in FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
+        {
+            listener.enabled = false;
+            Camera previewCamera = listener.GetComponent<Camera>();
+            if (previewCamera != null) previewCamera.enabled = false;
+        }
         GameObject cameraObject = new GameObject("Player Camera");
+        cameraObject.tag = "MainCamera";
         playerCamera = cameraObject.AddComponent<Camera>();
+        playerCamera.fieldOfView = settings.FieldOfView;
+        cameraObject.AddComponent<AudioListener>();
         playerCamera.nearClipPlane = 0.05f; // default 0.3 clips hand-held stuff like the torch since it sits close to the face
         cameraTransform = cameraObject.transform;
         UpdateCameraPosition();
@@ -336,8 +359,12 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         EnsureEventSystem();
 
         GameObject canvasInstance = Instantiate(touchControlsCanvasPrefab);
+        controlsInstance = canvasInstance;
         moveJoystick = canvasInstance.GetComponentInChildren<TouchJoystick>();
         lookSurface = canvasInstance.GetComponentInChildren<TouchLookSurface>();
+        if (moveJoystick != null) moveJoystick.transform.localScale *= settings.HudScale;
+        foreach (Button button in canvasInstance.GetComponentsInChildren<Button>(true))
+            button.transform.localScale *= settings.HudScale;
 
         WireUpButton(canvasInstance, "CrouchButton", ToggleCrouch);
 
@@ -363,6 +390,26 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         {
             button.onClick.AddListener(onClickAction);
         }
+    }
+
+    [PunRPC]
+    public void TakeDamage(int amount, PhotonMessageInfo info)
+    {
+        if (info.Sender != PhotonNetwork.MasterClient || amount <= 0 || health.IsDead || HasEscaped) return;
+        health.CurrentHealth -= amount;
+    }
+
+    public void MarkEscaped()
+    {
+        HasEscaped = true;
+        enabled = false;
+        if (controlsInstance != null) controlsInstance.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        if (controlsInstance != null) Destroy(controlsInstance);
+        if (playerCamera != null) Destroy(playerCamera.gameObject);
     }
 
     private Transform FindDeepChild(Transform parent, string name) // searches every descendant, not just direct children

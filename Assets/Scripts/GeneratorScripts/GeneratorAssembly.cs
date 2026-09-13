@@ -97,7 +97,7 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
     {
         if (doorToOpen != null)
         {
-            doorToOpen.SetActive(true);
+            doorToOpen.SetActive(false);
         }
 
         // win trigger enable

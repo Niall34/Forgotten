@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UI = ForgottenSettingsUI;
 
@@ -61,7 +60,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
     private void Update()
     {
         if (settingsPanel != null && settingsPanel.activeSelf &&
-            Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            Input.GetKeyDown(KeyCode.Escape))
         {
             if (resetConfirmation.activeSelf)
                 resetConfirmation.SetActive(false);
@@ -255,9 +254,9 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
     {
         Button button = UI.Button(parent, "SettingsButton", "SETTINGS");
         RectTransform rect = (RectTransform)button.transform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = new Vector2(-536f, -172f);
-        rect.sizeDelta = new Vector2(160f, 44f);
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+        rect.anchoredPosition = new Vector2(150f, -90f);
+        rect.sizeDelta = new Vector2(160f, 36f);
         button.onClick.AddListener(OpenSettings);
     }
 

@@ -30,6 +30,11 @@ public class UIPrompt : MonoBehaviourPun
 
     private void Start()
     {
+        if (!photonView.IsMine || GetComponent<PlayerController>() == null)
+        {
+            enabled = false;
+            return;
+        }
         CreatePromptUI();
         playerInventory = GetComponent<PlayerInventory>();
     }
@@ -61,7 +66,7 @@ public class UIPrompt : MonoBehaviourPun
             messageShowTimer-= Time.deltaTime;
             if (messageShowTimer <= 0)
             {
-                messageText.canvas.gameObject.SetActive(false);
+                messageBackground.gameObject.SetActive(false);
             }
         }
     }
@@ -75,6 +80,7 @@ public class UIPrompt : MonoBehaviourPun
         promptCanvas = canvasObj.AddComponent<Canvas>();
         promptCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         promptCanvas.sortingOrder = 100;
+        canvasObj.AddComponent<GraphicRaycaster>();
 
         CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -88,6 +94,7 @@ public class UIPrompt : MonoBehaviourPun
         RectTransform pickupRect = pickupPromptPanel.AddComponent<RectTransform>();
         pickupRect.sizeDelta = new Vector2(300, 120);
         pickupRect.anchoredPosition = new Vector2(0, -150);
+        pickupRect.localScale = Vector3.one * ForgottenGameSettings.HudScale;
  
         Image pickupBg = pickupPromptPanel.AddComponent<Image>();
         pickupBg.color = infoColor;
@@ -131,6 +138,7 @@ public class UIPrompt : MonoBehaviourPun
         RectTransform installRect = installPromptPanel.AddComponent<RectTransform>();
         installRect.sizeDelta = new Vector2(300, 150);
         installRect.anchoredPosition = new Vector2(0, -150);
+        installRect.localScale = Vector3.one * ForgottenGameSettings.HudScale;
  
         Image installBg = installPromptPanel.AddComponent<Image>();
         installBg.color = warningColor;
@@ -269,9 +277,10 @@ public class UIPrompt : MonoBehaviourPun
         }
     }
  
-    public void ShowMessage(string message, PromptType type = PromptType.Info)
+    public void ShowMessage(string message, PromptType type = PromptType.Info, float duration = 2f)
     {
         messageText.text = message;
+        messageDuration = duration;
         messageShowTimer = messageDuration;
  
         // Change color based on type
@@ -295,6 +304,6 @@ public class UIPrompt : MonoBehaviourPun
                 break;
         }
  
-        messageText.canvas.gameObject.SetActive(true);
+        messageBackground.gameObject.SetActive(true);
     }
 }

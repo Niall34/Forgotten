@@ -20,10 +20,17 @@ public class PlayerInventory : MonoBehaviourPun
     private float installHoldTimer = 0f;
     private bool isInstallingPiece = false;
     private UIPrompt uiPrompt;
+    private float baseMoveSpeed;
+    private float baseSprintSpeed;
 
     private void Start()
     {
+        if (!photonView.IsMine) { enabled = false; return; }
         playerController = GetComponent<PlayerController>();
+        if (playerController == null) { enabled = false; return; }
+        baseMoveSpeed = playerController.moveSpeed;
+        baseSprintSpeed = playerController.sprintSpeed;
+        if (generator == null) generator = FindFirstObjectByType<GeneratorAssembly>();
         uiPrompt = GetComponent<UIPrompt>();
         if (uiPrompt == null)
         {
@@ -175,14 +182,14 @@ public class PlayerInventory : MonoBehaviourPun
         if (heldPiece != null)
         {
             // Apply speed penalty when holding a piece
-            playerController.moveSpeed = 4.5f * speedPenalty;
-            playerController.sprintSpeed = 7.5f * speedPenalty;
+            playerController.moveSpeed = baseMoveSpeed * speedPenalty;
+            playerController.sprintSpeed = baseSprintSpeed * speedPenalty;
         }
         else
         {
             // Reset to normal speed
-            playerController.moveSpeed = 4.5f;
-            playerController.sprintSpeed = 7.5f;
+            playerController.moveSpeed = baseMoveSpeed;
+            playerController.sprintSpeed = baseSprintSpeed;
         }
     }
  
@@ -196,4 +203,3 @@ public class PlayerInventory : MonoBehaviourPun
         return isInstallingPiece;
     }
 }
- 

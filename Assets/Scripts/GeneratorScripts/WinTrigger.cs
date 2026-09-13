@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(SphereCollider))]
+[RequireComponent(typeof(PhotonView))]
 public class WinTrigger : MonoBehaviourPun
 {
     [Header("Win")]
@@ -36,7 +37,7 @@ public class WinTrigger : MonoBehaviourPun
         }
 
         PlayerController player = other.GetComponent<PlayerController>();
-        if (player == null)
+        if (player == null || player.HasEscaped)
         {
             return;
         }
@@ -64,18 +65,20 @@ public class WinTrigger : MonoBehaviourPun
             return;
         }
 
+        player.MarkEscaped();
+
         // Check if this is the local player
         if (pv.IsMine)
         {
             // load win scene
-            if (!string.IsNullOrEmpty(winSceneName))
+            if (!string.IsNullOrEmpty(winSceneName) && Application.CanStreamedLevelBeLoaded(winSceneName))
             {
                 SceneManager.LoadScene(winSceneName);
             }
             else
             {
-                player.transform.position = teleportPosition;
-
+                // The merged branch does not contain a WinScreen scene yet.
+                player.GetComponent<UIPrompt>()?.ShowMessage("YOU ESCAPED!", UIPrompt.PromptType.Success, float.PositiveInfinity);
             }
         }
     }

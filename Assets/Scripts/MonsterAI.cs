@@ -372,6 +372,9 @@ public class MonsterAI : MonoBehaviourPun
 
         foreach (PlayerController player in PlayerController.All)
         {
+            if (player.HasEscaped) continue;
+            var health = player.GetComponent<Forgotten.Player.PlayerHealthStateMachine>();
+            if (health != null && health.IsDead) continue;
             float distance = Vector3.Distance(transform.position, player.transform.position);
             if (closest == null || distance < closestDistance)
             {
