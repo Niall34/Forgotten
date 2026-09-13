@@ -6,6 +6,7 @@ Repository: Niall34/Forgotten. Integration began from main c2f1909 on 13 Septemb
 Map 09bc8c0 and Player 1fb3a36 were already ancestors of main. Lobby 6ff71ca,
 Generator 3cace16 and Settings a5a7fd8 were merged with history preserved.
 Settings was a source-only export with an unrelated history.
+The later Settings tip 76daafb (build-folder ignore rules only) was also included.
 
 ## Runtime and packages
 

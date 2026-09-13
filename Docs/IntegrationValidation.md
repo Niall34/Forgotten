@@ -11,6 +11,9 @@ Map 09bc8c0, Player 1fb3a36, Settings a5a7fd8. Every tip was verified as an ance
 of the integration branch after fetching the remote again. Original branches and
 commit authorship are retained. No force-push or fabricated development history.
 
+A later Settings update, 76daafb, added only Build/Builds ignore rules. It was also
+merged before final handoff; it does not change the runtime code tested below.
+
 ## Checks completed
 
 The editor-only `CombinedProjectValidation.Run` check compiled and ran in Unity
