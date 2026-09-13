@@ -300,6 +300,12 @@ public class MonsterAI : MonoBehaviourPun
         agent.isStopped = true;
         agent.velocity = Vector3.zero; // isStopped alone can still let it coast forward a bit on leftover momentum, this kills that immediately
         agent.ResetPath(); // also drop the current path entirely so there's nothing left for it to resume
+
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", 0f); // Update() skips UpdateAnimator() while isAttacking, so Speed would otherwise stay frozen at its last (likely running) value the whole time
+        }
+
         photonView.RPC(nameof(PlayAttackRPC), RpcTarget.All);
 
         yield return new WaitForSeconds(attackAnimationDuration);
