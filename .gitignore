@@ -6,11 +6,16 @@
 # See: https://github.com/github/gitignore/tree/main/Global
 #
 .utmp/
+.DS_Store
+.DS_Store.meta
+.vscode/
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
+Build/
+Builds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 *.log

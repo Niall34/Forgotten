@@ -50,6 +50,7 @@ public class LobbyUI : MonoBehaviour
 
     private Canvas canvas;
     private NetworkManager net;
+    private ForgottenSettingsMenu settingsMenu;
     private string storedNickname = "";
 
     // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes
@@ -75,6 +76,9 @@ public class LobbyUI : MonoBehaviour
 
         canvas = GetComponent<Canvas>();
         net = NetworkManager.Bootstrap();
+        settingsMenu = GetComponent<ForgottenSettingsMenu>();
+        if (settingsMenu == null) settingsMenu = gameObject.AddComponent<ForgottenSettingsMenu>();
+        settingsMenu.Initialize(mainLobbyPanel);
 
         continueButton.onClick.AddListener(OnNameContinueClicked);
         playButton.onClick.AddListener(OnPlayClicked);
@@ -178,6 +182,8 @@ public class LobbyUI : MonoBehaviour
         // solo games skip the lobby screens entirely and go straight to gameplay
         if (net.IsSolo)
         {
+            settingsMenu.HideImmediately();
+            settingsMenu.StopLobbyMusic();
             canvas.enabled = false;
             return;
         }
@@ -246,6 +252,8 @@ public class LobbyUI : MonoBehaviour
         {
             handledMatchStarting = true;
             SetStatus("Starting...");
+            settingsMenu.HideImmediately();
+            settingsMenu.StopLobbyMusic();
             canvas.enabled = false;
         }
     }
@@ -402,6 +410,7 @@ public class LobbyUI : MonoBehaviour
 
     private void ShowPanel(GameObject panelToShow) // activates one panel and hides the rest
     {
+        settingsMenu?.HideImmediately();
         namePromptPanel.SetActive(panelToShow == namePromptPanel);
         mainLobbyPanel.SetActive(panelToShow == mainLobbyPanel);
         joiningLobbyPanel.SetActive(panelToShow == joiningLobbyPanel);
