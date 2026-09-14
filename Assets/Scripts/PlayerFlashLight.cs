@@ -9,8 +9,8 @@ public class PlayerFlashLight : MonoBehaviour
     public float onIntensity = 300f;
 
     [Header("Flicker")]
-    public float flickerSpeed = 7f; // higher = faster flicker
-    public float flickerMinIntensity = 290f; // how low the dips go
+    public float flickerSpeed = 5f; // higher = faster flicker
+    public float flickerMinIntensity = 250f; // how low the dips go
 
     private bool isOn = false;
     private float flickerSeed; // random offset so multiple players' torches don't flicker in sync with each other

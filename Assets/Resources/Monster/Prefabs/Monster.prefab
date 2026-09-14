@@ -745,8 +745,10 @@ MonoBehaviour:
   chaseRange: 12
   giveUpRange: 24
   searchTime: 8
+  maxNoiseDetectionBonus: 4
+  flashlightDetectionBonus: 4
   patrolSpeed: 1.7
-  chaseSpeed: 7.5
+  chaseSpeed: 4
   wanderRadius: 15
   patrolPauseMin: 1
   patrolPauseMax: 4
@@ -755,6 +757,7 @@ MonoBehaviour:
   despawnHiddenDuration: 10
   attackRange: 2.5
   attackAnimationDuration: 2.3
+  detectionGraceAfterRespawn: 5
 --- !u!1 &1162833647545388874
 GameObject:
   m_ObjectHideFlags: 0
