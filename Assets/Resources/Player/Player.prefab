@@ -129,8 +129,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb560074fd1f33845b01a01c50fe9f90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 3
-  sprintSpeed: 8.6
+  moveSpeed: 2
+  sprintSpeed: 4
   turnSpeed: 140
   gravity: -9.81
   crouchSpeed: 2.5
@@ -144,11 +144,13 @@ MonoBehaviour:
   cameraPitchMin: -20
   cameraPitchMax: 55
   lookSensitivity: 0.15
+  mouseLookMultiplier: 15
   touchControlsCanvasPrefab: {fileID: 4995645851406762100, guid: 1a4fc5c3ee1afaf4da7b1327ee34fc80, type: 3}
   animator: {fileID: 209546359802999642}
   headBone: {fileID: 3815328967247126744}
   headLookAxisSign: -1
   torchAnchor: {fileID: 8987578462997009915}
+  torchLightAim: {fileID: 0}
 --- !u!95 &209546359802999642
 Animator:
   serializedVersion: 7
@@ -310,10 +312,6 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: -6194355465214790693, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
-      propertyPath: torchLight
-      value: 
-      objectReference: {fileID: 6402988173902909076}
     - target: {fileID: 48885941002366607, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
       propertyPath: m_AdditionalLightsShadowResolutionTier
       value: 2
@@ -458,9 +456,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -6194355465214790693, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
     m_RemovedGameObjects:
     - {fileID: 2088676679679038063, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
+    - {fileID: 7904057512449899626, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7021590931246295734, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
@@ -547,15 +547,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d934770ba04a10340a3a4a3cfc584739, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerFlashLight
-  torchLight: {fileID: 6402988173902909076}
+  torchLight: {fileID: 9147538641349975642}
   onIntensity: 2.5
   flickerSpeed: 5
   flickerMinIntensity: 296
---- !u!108 &6402988173902909076 stripped
-Light:
-  m_CorrespondingSourceObject: {fileID: 7904057512449899623, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}
-  m_PrefabInstance: {fileID: 3849207414219338483}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &6868344216086217471 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7654539451631824908, guid: c49cd3761459cf1459d82af56a835b4e, type: 3}

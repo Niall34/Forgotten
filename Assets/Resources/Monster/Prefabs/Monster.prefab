@@ -696,7 +696,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 1479372276
   m_Radius: 0.3
-  m_Speed: 8.6
+  m_Speed: 5
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -747,8 +747,8 @@ MonoBehaviour:
   searchTime: 8
   maxNoiseDetectionBonus: 4
   flashlightDetectionBonus: 4
-  patrolSpeed: 1.7
-  chaseSpeed: 4
+  patrolSpeed: 1
+  chaseSpeed: 3.4
   wanderRadius: 15
   patrolPauseMin: 1
   patrolPauseMax: 4
@@ -756,6 +756,8 @@ MonoBehaviour:
   despawnChance: 0.307
   despawnHiddenDuration: 10
   attackRange: 2.5
+  attackDamage: 10
+  attackCooldown: 1.5
   attackAnimationDuration: 2.3
   detectionGraceAfterRespawn: 5
 --- !u!1 &1162833647545388874

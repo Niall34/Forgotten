@@ -1,7 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 
-// this controls the lobby scene which controls and shows a local-only preview character before anyone has hosted or joined
+// controls the lobby scene - shows a local-only preview character before joining a room
 // and spawns the real networked character once the player is in a room
 public class LobbyStage : MonoBehaviour
 {
@@ -13,13 +13,14 @@ public class LobbyStage : MonoBehaviour
     private bool hasSpawnedReal = false;
     private GameObject previewInstance;
     private bool wasInRoom = false;
+    private string myDisplayName = ""; // saved from SpawnPreview, used later by SpawnLocalCharacter
 
     private void Start() // grabs the network manager
     {
         net = NetworkManager.Bootstrap();
     }
 
-    private void Update() // watches for joining a room, to swap the preview for the real character
+    private void Update() // checks if we just joined a room, and swaps the preview for the real character if so
     {
         bool isInRoomNow = net.InRoom;
         if (isInRoomNow && wasInRoom == false)
@@ -29,9 +30,11 @@ public class LobbyStage : MonoBehaviour
         wasInRoom = isInRoomNow;
     }
 
-    // local only preview character which is shown before any room exists
+    // spawns the local-only preview character shown before any room exists
     public void SpawnPreview(string displayName)
     {
+        myDisplayName = displayName; // saved for SpawnLocalCharacter to use later
+
         if (previewInstance != null)
         {
             // just update its label instead of making a duplicate
@@ -72,11 +75,11 @@ public class LobbyStage : MonoBehaviour
         }
     }
 
-    // real networked character which is spawned only after actually joining a room
+    // real networked character, spawned only after actually joining a room
 
-    private void HandleJustJoinedRoom()
+    private void HandleJustJoinedRoom() // spawns the real character the first time we join a room
     {
-        // solo sessions skip this scene's staging entirely and go straight to gameplay
+        // solo sessions skip this and go straight to gameplay
 
         if (hasSpawnedReal || net.IsSolo)
         {
@@ -90,13 +93,14 @@ public class LobbyStage : MonoBehaviour
 
     private void SpawnLocalCharacter() // spawns the real character at a seat based on the player's actor number
     {
-        // player numbers start at 1, so this gives every player a different spawn point and
-        // keeps the same player in the same seat if they rejoin, if you've got more players
-        // than spawn points placed this will throw, so make sure you've placed enough
+        // actor numbers start at 1, so this gives each player a different spawn point
+        // and keeps them in the same seat if they rejoin - needs enough spawn points placed or this will throw
         LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
         int mySeat = PhotonNetwork.LocalPlayer.ActorNumber - 1;
         Transform chosenPoint = spawnPoints[mySeat].transform;
 
-        PhotonNetwork.Instantiate(characterPrefabName, chosenPoint.position, chosenPoint.rotation);
+        // sends the name as instantiation data so every client can read it right away - LobbyPreviewCharacter picks it up in its own Awake()
+        object[] instantiationData = new object[] { myDisplayName };
+        PhotonNetwork.Instantiate(characterPrefabName, chosenPoint.position, chosenPoint.rotation, 0, instantiationData);
     }
 }
