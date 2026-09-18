@@ -4,27 +4,32 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 
-// Manages players inventory, what pieces they have and generator interaction
+// Debug version - handles touch button interactions for picking up and installing pieces
 [RequireComponent(typeof(PhotonView))]
 public class PlayerInventory : MonoBehaviourPun
 {
     [Header("Inventory")]
-    public float speedPenalty = 0.5f;
-
+    public float speedPenalty = 0.5f; // multiply move speed by this when holding piece (0.5 = half speed)
+ 
     [Header("Installation")]
     public GeneratorAssembly generator;
     public float installHoldDuration = 10f;
-    
+ 
     private GeneratorPiece heldPiece;
     private PlayerController playerController;
     private float installHoldTimer = 0f;
     private bool isInstallingPiece = false;
     private UIPrompt uiPrompt;
 
+    private Button pickupButton;
+    private Button installButton;
+    private Text installProgressText;
+ 
     private void Start()
     {
         playerController = GetComponent<PlayerController>();
         uiPrompt = GetComponent<UIPrompt>();
+ 
         if (uiPrompt == null)
         {
             uiPrompt = gameObject.AddComponent<UIPrompt>();
@@ -37,104 +42,105 @@ public class PlayerInventory : MonoBehaviourPun
         {
             return;
         }
-
+ 
         CheckForNearbyPieces();
         HandleGeneratorInteraction();
         UpdateMovementSpeed();
     }
-
+ 
     private void CheckForNearbyPieces()
+{
+    GeneratorPiece[] allPieces = FindObjectsOfType<GeneratorPiece>();
+
+    GeneratorPiece closestPiece = null;
+    float closestDistance = 3f;
+
+    foreach (GeneratorPiece piece in allPieces)
     {
-        // Find all generator pieces in the scene 
-        GeneratorPiece[] allPieces = FindObjectsOfType<GeneratorPiece>();
-
-        GeneratorPiece closestPiece = null;
-        float closestDistance = 3f;
-
-        foreach (GeneratorPiece piece in allPieces)
+        if (piece.IsPickedUp())
         {
-            if (piece.IsPickedUp())
-            {
-                continue; //skip already picked up 
-            }
-
-            float distance = Vector3.Distance(transform.position, piece.transform.position);
-
-            if (distance < closestDistance)
-            {
-                closestPiece = piece;
-                closestDistance = distance;
-            }
+            continue;
         }
-        
-        // Show pickup prompt and button near a piece
-        if (closestPiece != null && heldPiece == null)
+
+        float distance = Vector3.Distance(transform.position, piece.transform.position);
+        if (distance < closestDistance)
         {
-            uiPrompt.ShowPickupPrompt(closestPiece, this);
-        }
-        else if (heldPiece != null && generator != null)
-        {
-            // show installation prompt when near the generator with a piece
-            if (generator.CanInstallPiece(this))
-            {
-                uiPrompt.ShowInstallPrompt(this);
-            }
-            else 
-            {
-                uiPrompt.HideInstallPrompt();
-            }
-        }
-        else 
-        {
-            uiPrompt.HidePickupPrompt();
-            uiPrompt.HideInstallPrompt();
+            closestPiece = piece;
+            closestDistance = distance;
         }
     }
 
+    if (closestPiece != null && heldPiece == null)
+    {
+        uiPrompt.ShowPickupPrompt(closestPiece, this);
+    }
+    else if (heldPiece != null && generator != null)
+    {
+        
+        if (generator.CanInstallPiece(this))
+        {
+            uiPrompt.ShowInstallPrompt(this);
+        }
+        else
+        {
+            uiPrompt.HideInstallPrompt();
+        }
+    }
+    else
+    {
+        uiPrompt.HidePickupPrompt();
+        uiPrompt.HideInstallPrompt();
+    }
+}
     private void HandleGeneratorInteraction()
     {
-        if (heldPiece == null || generator == null || !generator.CanInstallPiece(this))
+        if (heldPiece == null || generator == null)
         {
             installHoldTimer = 0f;
             isInstallingPiece = false;
             return;
         }
-
+ 
         if (!generator.CanInstallPiece(this))
         {
-            installHoldTimer= 0f;
+            installHoldTimer = 0f;
             isInstallingPiece = false;
             return;
         }
-        
+ 
+        // This is now controlled by the Install button
+        // The button callback will handle incrementing the timer
     }
-
+ 
+    // Called by the Install button when held down
     public void OnInstallButtonDown()
     {
         if (heldPiece == null || generator == null || !generator.CanInstallPiece(this))
         {
             return;
         }
+ 
         if (!isInstallingPiece)
         {
             isInstallingPiece = true;
             installHoldTimer = 0f;
         }
     }
-    
+ 
+    // Called every frame while install button is held (by UIPrompt)
     public void UpdateInstallProgress()
     {
         if (!isInstallingPiece || heldPiece == null)
         {
             return;
         }
-
+ 
         installHoldTimer += Time.deltaTime;
-
-        //Update UI with progress
+ 
+        // Update UI with progress
         float progress = installHoldTimer / installHoldDuration;
         uiPrompt.UpdateInstallProgress(progress);
-
+ 
         if (installHoldTimer >= installHoldDuration)
         {
             // Piece installed!

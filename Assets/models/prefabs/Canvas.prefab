@@ -888,6 +888,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5923b9e0441781c458913541d083322a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TouchJoystick
+  sprintRadius: 130
+  doubleFlickWindow: 0.4
   background: {fileID: 4458920258612856372}
   handle: {fileID: 8144949140365351755}
   sprintIcon: {fileID: 1191034477426171373}

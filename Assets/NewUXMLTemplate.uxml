@@ -1,0 +1,6 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Label text="0%" name="installProgressText" style="position: absolute; top: 145px; left: 253px; height: 58px; width: 171px; -unity-text-align: middle-center; white-space: nowrap;"/>
+    <ui:Button text="Hold to install" name="installButton" style="position: absolute; top: 222px; left: 291px; height: 41px; width: 105px; background-color: rgb(173, 159, 65);"/>
+    <ui:Button text="Pick Up" name="pickupButton" style="position: absolute; top: 221px; left: 304px; height: 42px; width: 86px; color: rgb(240, 242, 245); background-color: rgb(28, 96, 168);"/>
+    <ui:Label text="message" name="messageText" style="position: absolute; top: 104px; left: 306px; height: 23px; width: 86px; -unity-text-align: lower-center; background-color: rgb(88, 88, 88);"/>
+</ui:UXML>

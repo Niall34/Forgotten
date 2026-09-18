@@ -27,6 +27,7 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
     private float currentMotorSpeed = 0f;
     private AudioSource audioSource;
 
+
     private void Start()
     {
         // AUDIO SET UP 
@@ -49,29 +50,26 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
     }
 
     public bool CanInstallPiece(PlayerInventory player)
+{
+    if (player == null || player.GetHeldPiece() == null)
     {
-        // Check if player is close enough and holding a piece
-
-        if (player == null || player.GetHeldPiece() == null)
-        {
-            return false;
-        }
-
-        float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
-        return distanceToPlayer <= interactionDistance;
+        return false;
     }
 
-    public void InstallPiece(GeneratorPiece piece)
-    {
-        if (piece == null)
-        {
-            return;
-        }
+    float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+    return distanceToPlayer <= interactionDistance;
+}
 
-        // tell everyone a piece was added to the generator
-        photonView.RPC(nameof(RPC_PieceInstalled), RpcTarget.All);
-        piece.PlacedOnGenerator();
+public void InstallPiece(GeneratorPiece piece)
+{
+    if (piece == null)
+    {
+        return;
     }
+
+    photonView.RPC(nameof(RPC_PieceInstalled), RpcTarget.All);
+    piece.PlacedOnGenerator();
+}
 
     [PunRPC]
     private void RPC_PieceInstalled()

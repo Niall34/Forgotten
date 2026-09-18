@@ -1,6 +1,6 @@
 using Photon.Pun;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using TMPro;
 using UnityEngine.SceneManagement;
 
@@ -13,7 +13,7 @@ public class GeneratorPiece : MonoBehaviourPun
 
     private SphereCollider pickupTrigger;
     private bool isPickedUp = false;
-    
+    private PlayerInventory carriedByPlayer;
 
     private void Start()
     {
@@ -40,11 +40,11 @@ public class GeneratorPiece : MonoBehaviourPun
         }
 
         // INFORM ALL PLAYERS THIS PIECE WAS PICKED UP
-        photonView.RPC(nameof(RPC_PickedUp), RpcTarget.All);
+        photonView.RPC(nameof(RPC_PickedUp), RpcTarget.All, player.photonView.ViewID);
     }
 
     [PunRPC]
-    private void RPC_PickedUp()
+    private void RPC_PickedUp(int playerViewID)
     {
         isPickedUp = true;
 
