@@ -1,6 +1,3 @@
-using UnityEngine;
-using HorrorGame.Player;
-
 public class DeathTest : MonoBehaviour
 {
     [SerializeField] private PlayerHealthStateMachine healthState;
