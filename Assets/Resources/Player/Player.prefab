@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 209546359802999642}
   - component: {fileID: 7478131813469942761}
   - component: {fileID: -8314272142849647559}
+  - component: {fileID: 5290357404427389631}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -131,8 +132,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb560074fd1f33845b01a01c50fe9f90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 3
-  sprintSpeed: 8.6
+  moveSpeed: 4
+  sprintSpeed: 9
   turnSpeed: 140
   gravity: -9.81
   crouchSpeed: 2.5
@@ -146,11 +147,14 @@ MonoBehaviour:
   cameraPitchMin: -20
   cameraPitchMax: 55
   lookSensitivity: 0.15
+  mouseLookMultiplier: 6
   touchControlsCanvasPrefab: {fileID: 4995645851406762100, guid: 1a4fc5c3ee1afaf4da7b1327ee34fc80, type: 3}
   animator: {fileID: 209546359802999642}
   headBone: {fileID: 3815328967247126744}
   headLookAxisSign: -1
   torchAnchor: {fileID: 8987578462997009915}
+  torchLightAim: {fileID: 0}
+  health: {fileID: 5290357404427389631}
 --- !u!95 &209546359802999642
 Animator:
   serializedVersion: 7
@@ -204,6 +208,24 @@ MonoBehaviour:
   warningColor: {r: 0.8, g: 0.6, b: 0.2, a: 0.9}
   successColor: {r: 0.2, g: 0.8, b: 0.4, a: 0.9}
   errorColor: {r: 0.8, g: 0.2, b: 0.2, a: 0.9}
+--- !u!114 &5290357404427389631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2203b760535716a4581611f371fa2146, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Forgotten.Player.PlayerHealthStateMachine
+  maxHealth: 100
+  injuredHealthThreshold: 50
+  deadHealthThreshold: 0
+  injuredSpeedMultiplier: 0.5
+  movementController: {fileID: 0}
+  spectatorController: {fileID: 0}
 --- !u!1001 &3849207414219338483
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -575,8 +597,41 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: 7665568731069052785, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6319086292977565285, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1756024826249799640}
   m_SourcePrefab: {fileID: 100100000, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
+--- !u!1 &3815328967246904566 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6319086292977565285, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}
+  m_PrefabInstance: {fileID: 7152599098249822867}
+  m_PrefabAsset: {fileID: 0}
+--- !u!143 &1756024826249799640
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3815328967246904566}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &3815328967247126742 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6319086292977066565, guid: 56fc080e7bbacb24c86fd1e5760231bd, type: 3}

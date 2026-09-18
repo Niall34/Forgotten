@@ -3,6 +3,7 @@ using Photon.Pun;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Forgotten.Player;
 
 // handles movement and camera look using a touch joystick and drag-to-look
 
@@ -42,6 +43,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     [SerializeField] private Transform torchAnchor; // empty object on the root, torch model lives under this
     [SerializeField] private Transform torchLightAim; // the actual "Torch Light" object, only this rotates with cameraPitch
+    [SerializeField] private PlayerHealthStateMachine health; // drag the same GameObject's health state machine here
 
     // every spawned player adds itself here, so anything needing every visible player (like a minimap) can find them
     private static List<PlayerController> allPlayers = new List<PlayerController>();
@@ -365,6 +367,13 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         {
             flashlight.SetLightOn(isFlashlightOn);
         }
+    }
+
+    [PunRPC]
+    private void TakeDamage(int amount)
+    {
+        if (health == null || health.IsDead) return;
+        health.CurrentHealth -= amount;
     }
 
     private Vector3 HandleMove() // reads WASD or the joystick, returns horizontal movement only (no gravity)

@@ -44,18 +44,26 @@ public class UIPrompt : MonoBehaviourPun
         // this handles install button 
         if (installButton != null && installPromptPanel.activeInHierarchy)
         {
-            if (Input.GetMouseButton(0)) //simulate touch as mouse click (TESTING)
+            bool holdingKey = Input.GetKey(KeyCode.I); //keyboard alternative to holding the button 
+            bool holdingMouseOverButton = false;
+
+            if (Input.GetMouseButton(0)) //simulate touch as mouse click 
             {
                 RectTransform installRect = installButton.GetComponent<RectTransform>();
                 Vector2 mousePos = Input.mousePosition;
 
                 if (RectTransformUtility.ScreenPointToLocalPointInRectangle(installRect, mousePos, null, out Vector2 localPoint) && installRect.rect.Contains(localPoint))
                 {
-                    playerInventory.OnInstallButtonDown();
-                    playerInventory.UpdateInstallProgress();     
+                    holdingMouseOverButton = true;
                 }
             }
-            else 
+
+            if (holdingKey || holdingMouseOverButton)
+            {
+                playerInventory.OnInstallButtonDown();
+                playerInventory.UpdateInstallProgress();
+            }
+            else
             {
                 playerInventory.OnInstallButtonUp();
             }

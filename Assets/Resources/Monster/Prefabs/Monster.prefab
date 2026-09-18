@@ -696,7 +696,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 1479372276
   m_Radius: 0.3
-  m_Speed: 5
+  m_Speed: 3
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -742,7 +742,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a9fa4bc52216b44094db1f15e6ffa67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MonsterAI
-  chaseRange: 12
+  chaseRange: 10
   giveUpRange: 24
   searchTime: 8
   maxNoiseDetectionBonus: 4
@@ -753,8 +753,8 @@ MonoBehaviour:
   patrolPauseMin: 1
   patrolPauseMax: 4
   despawnCheckInterval: 15
-  despawnChance: 0.307
-  despawnHiddenDuration: 10
+  despawnChance: 0.5
+  despawnHiddenDuration: 25
   attackRange: 2.5
   attackDamage: 10
   attackCooldown: 1.5
