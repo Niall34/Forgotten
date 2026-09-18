@@ -76,6 +76,8 @@ public class UIPrompt : MonoBehaviourPun
         promptCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         promptCanvas.sortingOrder = 100;
 
+        canvasObj.AddComponent<GraphicRaycaster>();
+
         CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
@@ -209,6 +211,8 @@ public class UIPrompt : MonoBehaviourPun
  
     private void OnPickupButtonClicked()
     {
+        Debug.Log($"Pickup button clicked! currentPiece : {currentPiece}, playerInventory : {playerInventory}");
+
         if (currentPiece != null && playerInventory != null)
         {
             playerInventory.PickUpPiece(currentPiece);
