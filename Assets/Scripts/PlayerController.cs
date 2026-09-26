@@ -38,11 +38,12 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     [Header("Animation")]
     [SerializeField] private Animator animator; // drag Player1's Animator in manually
-    [SerializeField] private Transform headBone; // drag the head bone here, NOT the camera
-    public float headLookAxisSign = -1f; // flip to +1 if the head bends the wrong way on some rigs
 
-    [SerializeField] private Transform torchAnchor; // empty object on the root, torch model lives under this
-    [SerializeField] private Transform torchLightAim; // the actual "Torch Light" object, only this rotates with cameraPitch
+    [Header("Torch")]
+    [SerializeField] private Transform torchLightAim; // the actual "Torch Light" object - NOT the visible torch model,
+    // that one stays parented to the head bone in the Hierarchy instead and just rides along with animation
+    public float torchHeight = 1.4f; // roughly chest height - where the light itself sits, regardless of what pose the model's in
+
     [SerializeField] private PlayerHealthStateMachine health; // drag the same GameObject's health state machine here
 
     // every spawned player adds itself here, so anything needing every visible player (like a minimap) can find them
@@ -64,12 +65,20 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     private TouchJoystick moveJoystick;
     private TouchLookSurface lookSurface;
-    private PlayerFlashLight flashlight; // found once in SetupTouchControls, reused by ToggleFlashlight
+    private PlayerFlashLight flashlight; // grabbed in Awake now, reused by ToggleFlashlight
     private bool isFlashlightOn = false;
+
+    [Header("Remote Smoothing")]
+    public float remoteLerpSpeed = 12f; // how fast a non-owned copy slides toward the real position - higher snaps quicker, lower is smoother but laggier
+    private Vector3 networkPosition; // latest position received for this player if we don't own it
+    private Quaternion networkRotation; // same idea but for facing direction
     public bool IsFlashlightOn // lets the monster check if this player's light is on
     {
         get { return isFlashlightOn; }
     }
+
+    private float animatorSpeedParam = 0f; // the value UpdateAnimator works out on the owner - remote clients never run
+    // their own Update() loop for this player, so this needs to travel over OnPhotonSerializeView like cameraPitch does
 
     private float movementNoiseLevel = 0f; // computed on the owner each frame, synced to others via OnPhotonSerializeView
     public float MovementNoiseLevel // 0 = silent, 1 = loud - monster uses this to gauge how easy this player is to find
@@ -88,6 +97,15 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         controller = GetComponent<CharacterController>();
         playerInventory = GetComponent<PlayerInventory>();
+
+        // grabbed here instead of SetupTouchControls so every client's copy of this player has it,
+        // not just the local owner's - otherwise the SetFlashlightState RPC has nothing to call on remote clients
+        flashlight = GetComponentInChildren<PlayerFlashLight>();
+
+        // starting guess for remote copies, gets overwritten the moment the first network packet comes in
+        networkPosition = transform.position;
+        networkRotation = transform.rotation;
+
         currentCameraHeight = cameraOffset.y;
         currentForwardOffset = standingForwardOffset;
     }
@@ -119,6 +137,10 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (photonView.IsMine == false)
         {
+            // not our player - the CharacterController is disabled on this copy (see Start()), so just
+            // slide the raw transform toward the last position/rotation we heard about over the network
+            transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * remoteLerpSpeed);
+            transform.rotation = Quaternion.Lerp(transform.rotation, networkRotation, Time.deltaTime * remoteLerpSpeed);
             return;
         }
 
@@ -240,8 +262,8 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         bool sprinting = isCrouching == false && IsSprintHeld();
 
         // 0.85 cap keeps full walking below the 0.9 Sprint threshold, sprinting jumps straight to 1
-        float speedParam = sprinting ? 1f : Mathf.Min(stickMagnitude, 0.85f);
-        animator.SetFloat("Speed", speedParam);
+        animatorSpeedParam = sprinting ? 1f : Mathf.Min(stickMagnitude, 0.85f);
+        animator.SetFloat("Speed", animatorSpeedParam);
     }
 
     private Vector3 ApplyGravity() // applies gravity so the character stays grounded, returns the vertical movement only
@@ -258,49 +280,62 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         return Vector3.up * verticalVelocity;
     }
 
-    private void LateUpdate() // moves the camera and tilts the head after movement/look, runs for every client
+    private void LateUpdate() // moves the camera and aims the torch light after movement/look, runs for every client
     {
         if (photonView.IsMine && playerCamera != null)
         {
             UpdateCameraPosition();
         }
 
-        ApplyHeadLook(); // uses either our own cameraPitch or the synced value from the owner
-        ApplyTorchAim(); // same idea, but for the torch
+        ApplyTorchAim(); // points the actual light at wherever the camera's aiming, same pivot idea as the camera itself
     }
 
-    private void ApplyTorchAim() // aims the torch up/down with cameraPitch (left/right already follows the body)
+    private void ApplyTorchAim() // points the actual Torch Light wherever the camera's aiming, completely separate from
+    // the animated skeleton - the visible torch model still sticks to the head bone in the Hierarchy for looks, this
+    // just moves the light source itself so the beam reliably tracks the look direction instead of following animation
     {
-        if (torchAnchor == null)
+        if (torchLightAim == null)
         {
             return;
         }
 
-        torchAnchor.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
-    }
+        // same pivot trick UpdateCameraPosition uses - fixed point straight off the body, rotated right there
+        // instead of swinging through space from a hinge further up the rig, which is what caused the arcing
+        Vector3 lightPosition = transform.position + Vector3.up * torchHeight;
+        Quaternion lightRotation = Quaternion.Euler(cameraPitch, transform.eulerAngles.y, 0f);
 
-    private void ApplyHeadLook() // tilts the head bone to match cameraPitch, after the Animator has posed the character
-    {
-        if (headBone == null)
-        {
-            return;
-        }
-
-        // stacks on top of whatever pose the Animator just set, rather than replacing it
-        headBone.localRotation = headBone.localRotation * Quaternion.Euler(headLookAxisSign * cameraPitch, 0f, 0f);
+        torchLightAim.position = lightPosition;
+        torchLightAim.rotation = lightRotation;
     }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) // syncs cameraPitch and noise level to other clients
     {
         if (stream.IsWriting)
         {
+            // position/rotation first just felt right, doesn't actually matter what order as long as both ends match
+            stream.SendNext(transform.position);
+            stream.SendNext(transform.rotation);
             stream.SendNext(cameraPitch);
             stream.SendNext(movementNoiseLevel);
+            stream.SendNext(animatorSpeedParam);
         }
         else
         {
+            // don't touch transform.position/rotation directly here - Update() lerps toward these every
+            // frame instead, snapping straight to the raw network value looks jittery on a laggy connection
+            networkPosition = (Vector3)stream.ReceiveNext();
+            networkRotation = (Quaternion)stream.ReceiveNext();
+
             cameraPitch = (float)stream.ReceiveNext();
             movementNoiseLevel = (float)stream.ReceiveNext();
+            animatorSpeedParam = (float)stream.ReceiveNext();
+
+            // remote copies of this player skip UpdateAnimator entirely (Update() bails out early up top for them),
+            // so this is the only place their Animator's Speed ever gets set - apply it as soon as it arrives
+            if (animator != null)
+            {
+                animator.SetFloat("Speed", animatorSpeedParam);
+            }
         }
     }
 
@@ -437,8 +472,8 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
         WireUpButton(canvasInstance, "CrouchButton", ToggleCrouch);
 
-        // flashlight lives on a child object, but the RPC has to live here since Photon RPCs can't target child components
-        flashlight = GetComponentInChildren<PlayerFlashLight>();
+        // flashlight reference is already grabbed in Awake() for every client - the RPC that toggles it
+        // still has to live here on PlayerController though, since Photon RPCs can't target child components directly
         WireUpButton(canvasInstance, "FlashlightButton", ToggleFlashlight);
     }
 
