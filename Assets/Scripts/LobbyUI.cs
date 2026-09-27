@@ -48,6 +48,10 @@ public class LobbyUI : MonoBehaviour
     [Header("Shared")]
     public TextMeshProUGUI statusText;
 
+    [Header("Loading Popup")]
+    public GameObject loadingPopup; // full screen overlay with a raycast-blocking image behind the text so it blocks any further input attempts
+    public TextMeshProUGUI loadingPopupText;
+
     private Canvas canvas;
     private NetworkManager net;
     private ForgottenSettingsMenu settingsMenu;
@@ -60,8 +64,7 @@ public class LobbyUI : MonoBehaviour
 
     private bool localReady = false;
 
-    // values that are remembered checked against the network manager's current values every
-    // frame in "Update()" to detect when something has changed
+    // values that are remembered checked against the network manager's current values every frame in "Update()" to detect when something has changed
     private bool wasInLobby = false;
     private bool wasInRoom = false;
     private int lastSeenErrorVersion = 0;
@@ -93,6 +96,8 @@ public class LobbyUI : MonoBehaviour
 
         joinCodeField.characterLimit = 6;
         joinCodeField.onValueChanged.AddListener(HandleJoinCodeTyped);
+
+        HideLoadingPopup(); // just in case someone left it active in the editor by accident
 
         storedNickname = PlayerPrefs.GetString(NicknameKey, "");
         bool alreadyHaveName = storedNickname != "";
@@ -128,6 +133,7 @@ public class LobbyUI : MonoBehaviour
             wantsToHostAfterConnecting = false;
             codeToJoinAfterConnecting = "";
             wantsToPlaySoloAfterConnecting = false;
+            HideLoadingPopup(); // whatever we were waiting on just failed, no point leaving it up
             SetStatus(net.ErrorMessage);
         }
     }
@@ -179,6 +185,8 @@ public class LobbyUI : MonoBehaviour
 
     private void HandleJustJoinedRoom()
     {
+        HideLoadingPopup(); // whatever got us here (hosting or joining) is done now
+
         // solo games skip the lobby screens entirely and go straight to gameplay
         if (net.IsSolo)
         {
@@ -211,6 +219,7 @@ public class LobbyUI : MonoBehaviour
 
     private void HandleJustLeftRoom() // goes back to the code-entry panel after leaving a room
     {
+        HideLoadingPopup();
         SetStatus("");
         canvas.enabled = true;
         ShowPanel(joiningLobbyPanel);
@@ -315,6 +324,7 @@ public class LobbyUI : MonoBehaviour
 
     public void OnHostClicked() // connects then hosts a room
     {
+        ShowLoadingPopup(); // pops up right away, whether we're already connected or still need to connect first
 
         codeToJoinAfterConnecting = "";
         wantsToPlaySoloAfterConnecting = false;
@@ -361,6 +371,8 @@ public class LobbyUI : MonoBehaviour
             return;
         }
 
+        ShowLoadingPopup(); // only pops up once we know there's an actual code to try, not on an empty submit
+
         if (net.InLobby)
         {
             SetStatus("Joining...");
@@ -404,6 +416,7 @@ public class LobbyUI : MonoBehaviour
     private void OnLeaveLobbyClicked()
     {
         // same button handler for both the guest and host "join another lobby" buttons
+        ShowLoadingPopup();
         SetStatus("Leaving...");
         net.LeaveRoom();
     }
@@ -423,6 +436,27 @@ public class LobbyUI : MonoBehaviour
         if (statusText != null)
         {
             statusText.text = message;
+        }
+    }
+
+    private void ShowLoadingPopup() // pops up the moment a button's tapped, also stops the user from firing another request
+    {
+        if (loadingPopup != null)
+        {
+            loadingPopup.SetActive(true);
+        }
+
+        if (loadingPopupText != null)
+        {
+            loadingPopupText.text = "Loading...";
+        }
+    }
+
+    private void HideLoadingPopup()
+    {
+        if (loadingPopup != null)
+        {
+            loadingPopup.SetActive(false);
         }
     }
 
