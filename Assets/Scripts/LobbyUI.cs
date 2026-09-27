@@ -2,6 +2,7 @@ using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 
@@ -49,15 +50,18 @@ public class LobbyUI : MonoBehaviour
     public TextMeshProUGUI statusText;
 
     [Header("Loading Popup")]
-    public GameObject loadingPopup; // full screen overlay with a raycast-blocking image behind the text so it blocks any further input attempts
+    public GameObject loadingPopup; // full-screen overlay with a raycast-blocking image behind the text that blocks inputs
     public TextMeshProUGUI loadingPopupText;
+
+    [Header("Game Loading Panel")]
+    public GameObject gameLoadingPanel; // shown while the actual gameplay scene loads in
 
     private Canvas canvas;
     private NetworkManager net;
     private ForgottenSettingsMenu settingsMenu;
     private string storedNickname = "";
 
-    // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes
+    // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes - this is a backup/safety net
     private bool wantsToHostAfterConnecting = false;
     private string codeToJoinAfterConnecting = "";
     private bool wantsToPlaySoloAfterConnecting = false;
@@ -70,6 +74,9 @@ public class LobbyUI : MonoBehaviour
     private int lastSeenErrorVersion = 0;
     private int lastSeenPlayerListVersion = -1;
     private bool handledMatchStarting = false;
+    private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene - stops
+    // CheckForMatchStarting from re-showing the cover if MatchStarting only arrives after we're already there (it's a
+    // separate network round-trip from the scene load itself, so it can genuinely show up late)
 
     private void Awake() // wires up every button, loads the saved name, and shows the right starting panel
     {
@@ -79,6 +86,7 @@ public class LobbyUI : MonoBehaviour
 
         canvas = GetComponent<Canvas>();
         net = NetworkManager.Bootstrap();
+        SceneManager.sceneLoaded += HandleGameplaySceneLoaded; // catches the moment the new scene's actually ready
         settingsMenu = GetComponent<ForgottenSettingsMenu>();
         if (settingsMenu == null) settingsMenu = gameObject.AddComponent<ForgottenSettingsMenu>();
         settingsMenu.Initialize(mainLobbyPanel);
@@ -98,6 +106,7 @@ public class LobbyUI : MonoBehaviour
         joinCodeField.onValueChanged.AddListener(HandleJoinCodeTyped);
 
         HideLoadingPopup(); // just in case someone left it active in the editor by accident
+        HideGameLoadingPanel(); // same deal - starts hidden regardless of how it was left in the editor
 
         storedNickname = PlayerPrefs.GetString(NicknameKey, "");
         bool alreadyHaveName = storedNickname != "";
@@ -192,13 +201,16 @@ public class LobbyUI : MonoBehaviour
         {
             settingsMenu.HideImmediately();
             settingsMenu.StopLobbyMusic();
-            canvas.enabled = false;
+            ShowPanel(null); // hides every lobby panel without touching the canvas itself, so gameLoadingPanel can still show
+            ShowGameLoadingPanel();
             return;
         }
 
         SetStatus("");
         localReady = false;
         canvas.enabled = true;
+        handledMatchStarting = false; // reset in case this isn't the first room we've been in this session
+        hasEnteredGameplayScene = false;
 
         if (net.IsMasterClient)
         {
@@ -255,7 +267,7 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    private void CheckForMatchStarting() // hides the whole menu once the match starts
+    private void CheckForMatchStarting() // hides the lobby panels and covers the screen once the match starts
     {
         if (net.MatchStarting && handledMatchStarting == false)
         {
@@ -263,7 +275,15 @@ public class LobbyUI : MonoBehaviour
             SetStatus("Starting...");
             settingsMenu.HideImmediately();
             settingsMenu.StopLobbyMusic();
-            canvas.enabled = false;
+
+            // MatchStarting can arrive a moment AFTER the scene itself already finished loading - it's a separate
+            // network round-trip, not tied to the local scene swap. if that's already happened, showing the cover
+            // now would just leave it stuck on screen forever, since nothing's left to hide it a second time
+            if (hasEnteredGameplayScene == false)
+            {
+                ShowPanel(null);
+                ShowGameLoadingPanel();
+            }
         }
     }
 
@@ -303,6 +323,13 @@ public class LobbyUI : MonoBehaviour
     {
         wantsToHostAfterConnecting = false;
         codeToJoinAfterConnecting = "";
+
+        // show the cover right away - whether we're already connected or still need to connect first, we don't
+        // want a gap where nothing's covering the screen while that happens
+        settingsMenu.HideImmediately();
+        settingsMenu.StopLobbyMusic();
+        ShowPanel(null);
+        ShowGameLoadingPanel();
 
         if (net.InLobby)
         {
@@ -410,6 +437,8 @@ public class LobbyUI : MonoBehaviour
     private void OnStartClicked() // host-only, force-starts the match
     {
         SetStatus("Starting...");
+        ShowPanel(null); // show the loading cover right away rather than waiting for MatchStarting to flip
+        ShowGameLoadingPanel();
         net.ForceStartGame();
     }
 
@@ -439,7 +468,7 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    private void ShowLoadingPopup() // pops up the moment a button's tapped, also stops the user from firing another request
+    private void ShowLoadingPopup() // pops up the moment a button's tapped, so it's obvious the input actually registered and stops any further input
     {
         if (loadingPopup != null)
         {
@@ -460,6 +489,28 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
+    private void HandleGameplaySceneLoaded(Scene loadedScene, LoadSceneMode mode) // fires for any scene load
+    {
+        hasEnteredGameplayScene = true;
+        HideGameLoadingPanel();
+    }
+
+    private void ShowGameLoadingPanel()
+    {
+        if (gameLoadingPanel != null)
+        {
+            gameLoadingPanel.SetActive(true);
+        }
+    }
+
+    private void HideGameLoadingPanel()
+    {
+        if (gameLoadingPanel != null)
+        {
+            gameLoadingPanel.SetActive(false);
+        }
+    }
+
     private void EnsureEventSystem() // makes sure exactly one EventSystem exists in the scene
     {
         EventSystem existing = FindAnyObjectByType<EventSystem>();
@@ -472,6 +523,11 @@ public class LobbyUI : MonoBehaviour
         eventSystemObject.AddComponent<EventSystem>();
         eventSystemObject.AddComponent<StandaloneInputModule>();
         DontDestroyOnLoad(eventSystemObject);
+    }
+
+    private void OnDestroy() // tidy up the subscription from Awake - this object should live for the whole game, but just in case
+    {
+        SceneManager.sceneLoaded -= HandleGameplaySceneLoaded;
     }
 
 #if UNITY_EDITOR

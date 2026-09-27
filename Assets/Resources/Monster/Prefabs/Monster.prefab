@@ -755,8 +755,8 @@ MonoBehaviour:
   despawnCheckInterval: 15
   despawnChance: 0.5
   despawnHiddenDuration: 25
-  attackRange: 2.5
-  attackDamage: 10
+  attackRange: 4
+  attackDamage: 35
   attackCooldown: 1.5
   attackAnimationDuration: 2.3
   detectionGraceAfterRespawn: 5
