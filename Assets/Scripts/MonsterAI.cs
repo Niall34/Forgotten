@@ -44,7 +44,7 @@ public class MonsterAI : MonoBehaviourPun
 
     [Header("Attack")]
     public float attackRange = 2f; // how close to the target before it attacks instead of continuing to chase
-    public int attackDamage = 10;
+    public int attackDamage = 50;
     public float attackCooldown = 1.5f;
     private float lastAttackTime = -999f;
     public float attackAnimationDuration = 1.2f; // how long to let the attack animation play before vanishing
