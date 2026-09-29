@@ -57,24 +57,3 @@ messages and blocks sending/receiving. There is no voice chat or cross-room chan
 | `RoomChatSession.cs` | Room messaging, sender validation and bounded session history. |
 | `RoomChatUI.cs` | Message entry, recent-message HUD and mobile keyboard layout. |
 
-## Music and remaining work
-
-The merged branches do not contain the lobby music file. To enable it, import a track
-you have permission to use at
-`Assets/Resources/Forgotten/Audio/whispering_shadows.ogg`. Unity loads it automatically.
-A YouTube link alone is not an audio asset in the project.
-
-The generator opens its door after five parts. Since this repository does not yet
-contain a WinScreen scene, reaching the exit shows an in-map escape message.
-Health currently supports healthy, injured and dead states; it is not the previously
-proposed 60-second revive system. Spectator target switching currently uses A/D keys.
-Phone controls and network gameplay race conditions still need device/team playtesting.
-Room chat was checked bidirectionally with two separate Photon client processes;
-see [chat validation](Docs/ChatValidation.md) for coverage and limitations.
-
-See [integration validation](Docs/IntegrationValidation.md) for the checks actually run
-and [project context](Docs/AI/UnityProjectContext.md) for architecture and merge decisions.
-iPhone builds additionally require a Mac, iOS Build Support, Xcode and device signing.
-
-The settings module and this integration were developed with AI assistance. Feature
-owners should review, understand and be able to demonstrate their contributions.
