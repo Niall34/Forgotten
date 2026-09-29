@@ -81,6 +81,11 @@ public class TouchJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     public void OnPointerUp(PointerEventData eventData) // touch ends: snaps the handle back to center and clears sprint
     {
+        ResetInput();
+    }
+
+    public void ResetInput()
+    {
         handle.anchoredPosition = Vector2.zero;
         Value = Vector2.zero;
         IsSprinting = false;

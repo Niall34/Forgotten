@@ -5,12 +5,31 @@ using UnityEngine.UI;
 /// <summary>Shared layout and styling for the settings screen.</summary>
 internal static class ForgottenSettingsUI
 {
-    internal static readonly Color Background = new Color32(15, 18, 22, 255);
-    internal static readonly Color Surface = new Color32(25, 30, 35, 255);
-    internal static readonly Color Control = new Color32(40, 47, 53, 255);
-    internal static readonly Color Accent = new Color32(171, 64, 49, 255);
-    internal static readonly Color TextColor = new Color32(237, 231, 220, 255);
-    internal static readonly Color Muted = new Color32(162, 172, 179, 255);
+    internal static readonly Color Background = new Color32(22, 18, 17, 244);
+    internal static readonly Color Surface = new Color32(35, 29, 27, 240);
+    internal static readonly Color Control = new Color32(61, 53, 50, 255);
+    internal static Color Accent = new Color(0.9019608f, 0.4428978f, 0.4428978f, 1f);
+    internal static readonly Color TextColor = new Color32(239, 230, 218, 255);
+    internal static readonly Color Muted = new Color32(185, 173, 164, 255);
+    internal static readonly Color OnAccent = new Color32(28, 15, 14, 255);
+    internal static TMP_FontAsset Font;
+
+    internal static void MatchLobby(Transform lobby)
+    {
+        foreach (var text in lobby.root.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (text.text.Trim().ToUpperInvariant() != "FORGOTTEN") continue;
+            Accent = text.color;
+            Font = text.font;
+            break;
+        }
+    }
+
+    internal static void SetSelected(Button button, bool selected)
+    {
+        button.image.color = selected ? Accent : Control;
+        button.GetComponentInChildren<TextMeshProUGUI>().color = selected ? OnAccent : TextColor;
+    }
 
     internal static RectTransform Rect(string name, Transform parent)
     {
@@ -68,6 +87,7 @@ internal static class ForgottenSettingsUI
     {
         TextMeshProUGUI text = Rect(name, parent).gameObject.AddComponent<TextMeshProUGUI>();
         text.text = value;
+        if (Font != null) text.font = Font;
         text.fontSize = size;
         text.color = muted ? Muted : TextColor;
         text.alignment = TextAlignmentOptions.MidlineLeft;
@@ -93,6 +113,7 @@ internal static class ForgottenSettingsUI
         Stretch(text.rectTransform);
         text.rectTransform.offsetMin = new Vector2(6f, 3f);
         text.rectTransform.offsetMax = new Vector2(-6f, -3f);
+        text.color = accent ? OnAccent : TextColor;
         return button;
     }
 

@@ -121,11 +121,17 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
             return;
         }
 
-        HandleLook();
+        bool typing = RoomChatUI.CapturesInput;
+        if (typing)
+        {
+            if (lookSurface != null) lookSurface.ConsumeLookDelta();
+            if (moveJoystick != null) moveJoystick.ResetInput();
+        }
+        else HandleLook();
 
         // grab the horizontal move direction from the joystick, then let gravity add the vertical part,
         // then move the controller ONCE with both combined so we don't get double-move jitter
-        Vector3 horizontalMove = HandleMove();
+        Vector3 horizontalMove = typing ? Vector3.zero : HandleMove();
         Vector3 gravityMove = ApplyGravity();
         controller.Move((horizontalMove + gravityMove) * Time.deltaTime);
 
@@ -243,6 +249,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     public void ToggleCrouch() // hook this up to your touch UI crouch button's OnClick
     {
+        if (RoomChatUI.CapturesInput) return;
         if (photonView.IsMine == false)
         {
             return;
@@ -268,6 +275,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     public void ToggleFlashlight() // hook this up to your touch UI flashlight button's OnClick
     {
+        if (RoomChatUI.CapturesInput) return;
         if (photonView.IsMine == false)
         {
             return;
@@ -372,6 +380,9 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         // since Photon RPCs can't target components sitting on child objects
         flashlight = GetComponentInChildren<PlayerFlashLight>();
         WireUpButton(canvasInstance, "FlashlightButton", ToggleFlashlight);
+        Transform chatButton = FindDeepChild(canvasInstance.transform, "ChatButton");
+        if (chatButton != null)
+            FindAnyObjectByType<RoomChatUI>()?.BindHudButton(chatButton.GetComponent<Button>());
     }
 
     private void WireUpButton(GameObject canvasInstance, string childName, UnityEngine.Events.UnityAction onClickAction)
