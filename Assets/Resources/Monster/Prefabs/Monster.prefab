@@ -747,15 +747,15 @@ MonoBehaviour:
   searchTime: 8
   maxNoiseDetectionBonus: 4
   flashlightDetectionBonus: 4
-  patrolSpeed: 1
-  chaseSpeed: 3.4
+  patrolSpeed: 2
+  chaseSpeed: 7.2
   wanderRadius: 15
   patrolPauseMin: 1
   patrolPauseMax: 4
   despawnCheckInterval: 15
   despawnChance: 0.5
   despawnHiddenDuration: 25
-  attackRange: 4
+  attackRange: 1
   attackDamage: 35
   attackCooldown: 1.5
   attackAnimationDuration: 2.3

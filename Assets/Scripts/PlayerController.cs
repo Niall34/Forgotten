@@ -34,17 +34,16 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     public float mouseLookMultiplier = 6f; // scales mouse deltas up to match touch deltas before lookSensitivity applies
 
     [Header("Touch Controls")]
-    public GameObject touchControlsCanvasPrefab; // Canvas with a TouchJoystick and TouchLookSurface somewhere inside
+    public GameObject touchControlsCanvasPrefab; // canvas with a TouchJoystick and TouchLookSurface somewhere inside
 
     [Header("Animation")]
-    [SerializeField] private Animator animator; // drag Player1's Animator in manually
+    [SerializeField] private Animator animator; 
 
     [Header("Torch")]
-    [SerializeField] private Transform torchLightAim; // the actual "Torch Light" object - NOT the visible torch model,
-    // that one stays parented to the head bone in the Hierarchy instead and just rides along with animation
-    public float torchHeight = 1.4f; // roughly chest height - where the light itself sits, regardless of what pose the model's in
+    [SerializeField] private Transform torchLightAim; // the actual torch light object, not the visible model, the model stays parented to the head bone instead to ride along with animations
+    public float torchHeight = 1.7f; // roughly head height, sets where the light itself sits
 
-    [SerializeField] private PlayerHealthStateMachine health; // drag the same GameObject's health state machine here
+    [SerializeField] private PlayerHealthStateMachine health;
 
     // every spawned player adds itself here, so anything needing every visible player (like a minimap) can find them
     private static List<PlayerController> allPlayers = new List<PlayerController>();
@@ -69,21 +68,41 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     private bool isFlashlightOn = false;
 
     [Header("Remote Smoothing")]
-    public float remoteLerpSpeed = 12f; // how fast a non-owned copy slides toward the real position - higher snaps quicker, lower is smoother but laggier
-    private Vector3 networkPosition; // latest position received for this player if we don't own it
+    public float remoteLerpSpeed = 12f; // how fast a non-owned copy slides toward the real position (higher snaps quicker, lower is smoother but laggier)
+    private Vector3 networkPosition; // latest position received for the player if you don't own it
     private Quaternion networkRotation; // same idea but for facing direction
     public bool IsFlashlightOn // lets the monster check if this player's light is on
     {
         get { return isFlashlightOn; }
     }
 
-    private float animatorSpeedParam = 0f; // the value UpdateAnimator works out on the owner - remote clients never run
-    // their own Update() loop for this player, so this needs to travel over OnPhotonSerializeView like cameraPitch does
+    private float animatorSpeedParam = 0f; // the value UpdateAnimator works out on the owner so remote clients never run their own Update() loop for this player, so this needs to travel over OnPhotonSerializeView like cameraPitch does
 
     private float movementNoiseLevel = 0f; // computed on the owner each frame, synced to others via OnPhotonSerializeView
-    public float MovementNoiseLevel // 0 = silent, 1 = loud - monster uses this to gauge how easy this player is to find
+    public float MovementNoiseLevel // 0 = silent, 1 = loud, monster uses this to gauge how easy this player is to find
     {
         get { return movementNoiseLevel; }
+    }
+
+    private bool isSprinting = false; // computed on the owner alongside movementNoiseLevel, synced the same way (can't just check MovementNoiseLevel==1 for this, since a diagonal keyboard press can also hit 1 without sprinting)
+    public bool IsSprinting
+    {
+        get { return isSprinting; }
+    }
+
+    public bool IsCrouching // already kept in sync everywhere via the SetCrouchState RPC, just exposing it here
+    {
+        get { return isCrouching; }
+    }
+
+    public bool IsMoving // true the instant there's any real movement input at all, crouched or not unlike MovementNoiseLevel this doesn't collapse to 0 just because you're crouching, only actual stillness does that
+    {
+        get { return animatorSpeedParam > 0.05f; }
+    }
+
+    public float EyeHeight // roughly where this player's head is right now, for the monster's line of sight checks, reuses the same numbers the camera itself already sits at, so crouching lowers the profile
+    {
+        get { return isCrouching ? crouchCameraHeight : cameraOffset.y; }
     }
 
     public bool HasEscaped { get; private set; } = false; // set once by WinTrigger when this player wins
@@ -98,8 +117,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         controller = GetComponent<CharacterController>();
         playerInventory = GetComponent<PlayerInventory>();
 
-        // grabbed here instead of SetupTouchControls so every client's copy of this player has it,
-        // not just the local owner's - otherwise the SetFlashlightState RPC has nothing to call on remote clients
+        // grabbed here instead of SetupTouchControls so every client's copy of this player has it, not just the local owner's (otherwise the SetFlashlightState RPC has nothing to call on remote clients)
         flashlight = GetComponentInChildren<PlayerFlashLight>();
 
         // starting guess for remote copies, gets overwritten the moment the first network packet comes in
@@ -110,12 +128,12 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         currentForwardOffset = standingForwardOffset;
     }
 
-    private void OnEnable() // adds this player to the shared All list
+    private void OnEnable() // adds this player to the shared all list
     {
         allPlayers.Add(this);
     }
 
-    private void OnDisable() // removes this player from the shared All list
+    private void OnDisable() // removes this player from the shared all list
     {
         allPlayers.Remove(this);
     }
@@ -137,8 +155,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (photonView.IsMine == false)
         {
-            // not our player - the CharacterController is disabled on this copy (see Start()), so just
-            // slide the raw transform toward the last position/rotation we heard about over the network
+            // not our player, the CharacterController is disabled on this copy (see Start()), so just slide the raw transform toward the last position/rotation we heard about over the network
             transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * remoteLerpSpeed);
             transform.rotation = Quaternion.Lerp(transform.rotation, networkRotation, Time.deltaTime * remoteLerpSpeed);
             return;
@@ -146,7 +163,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
         HandleLook();
 
-        // combine horizontal move + gravity into one Move call so we don't get double-move jitter
+        // combine horizontal move + gravity into one Move call so theres no double move jitter
         Vector3 horizontalMove = HandleMove();
         Vector3 gravityMove = ApplyGravity();
         controller.Move((horizontalMove + gravityMove) * Time.deltaTime);
@@ -154,7 +171,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         UpdateMovementNoiseLevel();
         UpdateAnimator();
 
-        // keyboard shortcuts for testing in the Editor - touch buttons call the same methods on mobile
+        // keyboard shortcuts for testing in the Editor, touch buttons call the same methods on mobile
         if (Input.GetKeyDown(KeyCode.F))
         {
             ToggleFlashlight();
@@ -219,15 +236,19 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         }
     }
 
-    private void UpdateMovementNoiseLevel() // works out how "loud" this player is right now, only meaningful on the owner
+    private void UpdateMovementNoiseLevel() // works out how loud the player is right now
     {
         if (isCrouching)
         {
             movementNoiseLevel = 0f; // crouching is always silent
+            isSprinting = false; // can't sprint while crouched anyway but just a safety net
             return;
         }
 
-        movementNoiseLevel = IsSprintHeld() ? 1f : GetCombinedMoveInput().magnitude;
+        isSprinting = IsSprintHeld();
+
+        // clamped to 0-1, GetCombinedMoveInput() can return a bit over 1 on a diagonal keyboard press and this value's meant to stay a clean 0-1
+        movementNoiseLevel = isSprinting ? 1f : Mathf.Clamp01(GetCombinedMoveInput().magnitude);
     }
 
     private Vector2 GetCombinedMoveInput() // keyboard input if pressed, otherwise falls back to the touch joystick
@@ -241,7 +262,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         return moveJoystick != null ? moveJoystick.Value : Vector2.zero;
     }
 
-    private bool IsSprintHeld() // Left Shift OR the touch joystick's sprint icon
+    private bool IsSprintHeld() // Left Shift or the touch joystick's sprint icon
     {
         if (Input.GetKey(KeyCode.LeftShift))
         {
@@ -290,17 +311,14 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         ApplyTorchAim(); // points the actual light at wherever the camera's aiming, same pivot idea as the camera itself
     }
 
-    private void ApplyTorchAim() // points the actual Torch Light wherever the camera's aiming, completely separate from
-    // the animated skeleton - the visible torch model still sticks to the head bone in the Hierarchy for looks, this
-    // just moves the light source itself so the beam reliably tracks the look direction instead of following animation
+    private void ApplyTorchAim() // points the actual Torch Light wherever the camera's aiming, the visible torch model still sticks to the head bone so only the light moves
     {
         if (torchLightAim == null)
         {
             return;
         }
 
-        // same pivot trick UpdateCameraPosition uses - fixed point straight off the body, rotated right there
-        // instead of swinging through space from a hinge further up the rig, which is what caused the arcing
+        // same pivot UpdateCameraPosition uses, fixed point straight off the body
         Vector3 lightPosition = transform.position + Vector3.up * torchHeight;
         Quaternion lightRotation = Quaternion.Euler(cameraPitch, transform.eulerAngles.y, 0f);
 
@@ -312,26 +330,26 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (stream.IsWriting)
         {
-            // position/rotation first just felt right, doesn't actually matter what order as long as both ends match
+            
             stream.SendNext(transform.position);
             stream.SendNext(transform.rotation);
             stream.SendNext(cameraPitch);
             stream.SendNext(movementNoiseLevel);
             stream.SendNext(animatorSpeedParam);
+            stream.SendNext(isSprinting);
         }
         else
         {
-            // don't touch transform.position/rotation directly here - Update() lerps toward these every
-            // frame instead, snapping straight to the raw network value looks jittery on a laggy connection
+            // don't touch transform.position/rotation directly here, Update() lerps toward these every frame instead
             networkPosition = (Vector3)stream.ReceiveNext();
             networkRotation = (Quaternion)stream.ReceiveNext();
 
             cameraPitch = (float)stream.ReceiveNext();
             movementNoiseLevel = (float)stream.ReceiveNext();
             animatorSpeedParam = (float)stream.ReceiveNext();
+            isSprinting = (bool)stream.ReceiveNext();
 
-            // remote copies of this player skip UpdateAnimator entirely (Update() bails out early up top for them),
-            // so this is the only place their Animator's Speed ever gets set - apply it as soon as it arrives
+            // remote copies of this player skip UpdateAnimator entirely (Update() bails out early up top for them), so this is the only place the Animator's Speed ever gets set
             if (animator != null)
             {
                 animator.SetFloat("Speed", animatorSpeedParam);
@@ -358,7 +376,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         cameraPitch = Mathf.Clamp(cameraPitch, cameraPitchMin, cameraPitchMax);
     }
 
-    public void ToggleCrouch() // hook this up to your touch UI crouch button's OnClick
+    public void ToggleCrouch()
     {
         if (photonView.IsMine == false)
         {
@@ -383,7 +401,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         controller.center = new Vector3(controller.center.x, targetHeight * 0.5f, controller.center.z);
     }
 
-    public void ToggleFlashlight() // hook this up to your touch UI flashlight button's OnClick
+    public void ToggleFlashlight()
     {
         if (photonView.IsMine == false)
         {
@@ -411,7 +429,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         health.CurrentHealth -= amount;
     }
 
-    private Vector3 HandleMove() // reads WASD or the joystick, returns horizontal movement only (no gravity)
+    private Vector3 HandleMove() // reads WASD or the joystick
     {
         Vector2 stickInput = GetCombinedMoveInput();
         bool sprinting = IsSprintHeld();
@@ -438,12 +456,12 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         GameObject cameraObject = new GameObject("Player Camera");
         playerCamera = cameraObject.AddComponent<Camera>();
-        playerCamera.nearClipPlane = 0.05f; // default 0.3 clips hand-held stuff like the torch
+        playerCamera.nearClipPlane = 0.05f;
         cameraTransform = cameraObject.transform;
         UpdateCameraPosition();
     }
 
-    private void UpdateCameraPosition() // positions the camera at head height, pivoting properly instead of a flat offset
+    private void UpdateCameraPosition() // positions the camera at head height
     {
         // blends height and forward push toward standing or crouching, instead of snapping instantly
         float targetHeight = isCrouching ? crouchCameraHeight : cameraOffset.y;
@@ -472,25 +490,23 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
         WireUpButton(canvasInstance, "CrouchButton", ToggleCrouch);
 
-        // flashlight reference is already grabbed in Awake() for every client - the RPC that toggles it
-        // still has to live here on PlayerController though, since Photon RPCs can't target child components directly
+        // flashlight reference is already grabbed in Awake() for every client, the RPC that toggles it still has to live here on PlayerController though, since Photon RPCs can't target child components directly
         WireUpButton(canvasInstance, "FlashlightButton", ToggleFlashlight);
     }
 
     // finds a button by name and wires it to a method in code, since the canvas is only created at runtime
-    // (there's nothing to drag a reference to in the Inspector ahead of time)
     private void WireUpButton(GameObject canvasInstance, string childName, UnityEngine.Events.UnityAction onClickAction)
     {
         // searches anywhere under the canvas, no matter how deeply nested
         Transform found = FindDeepChild(canvasInstance.transform, childName);
         if (found == null)
         {
-            // only prints if the name doesn't match anything - check the button's actual name in the Hierarchy
+            // only prints if the name doesn't match anything, check the button's actual name in the Hierarchy
             Debug.Log("Couldn't find a button named " + childName + " under the touch controls canvas");
             return;
         }
 
-        // needs an actual Button component to have onClick - comes back null if childName pointed at the wrong object
+        // needs an actual Button component to have onClick, comes back null if childName pointed at the wrong object
         Button button = found.GetComponent<Button>();
         if (button != null)
         {

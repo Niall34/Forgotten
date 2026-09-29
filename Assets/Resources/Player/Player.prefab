@@ -132,7 +132,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 4
-  sprintSpeed: 9
+  sprintSpeed: 7
   turnSpeed: 140
   gravity: -9.81
   crouchSpeed: 2.5
@@ -150,7 +150,7 @@ MonoBehaviour:
   touchControlsCanvasPrefab: {fileID: 4995645851406762100, guid: 1a4fc5c3ee1afaf4da7b1327ee34fc80, type: 3}
   animator: {fileID: 209546359802999642}
   torchLightAim: {fileID: 3378953369605111060}
-  torchHeight: 1.4
+  torchHeight: 1.7
   health: {fileID: 5290357404427389631}
   remoteLerpSpeed: 12
 --- !u!95 &209546359802999642
