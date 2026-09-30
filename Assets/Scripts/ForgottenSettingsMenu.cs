@@ -31,6 +31,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
             return;
         initialized = true;
         mainLobbyPanel = lobbyPanel;
+        UI.MatchLobby(lobbyPanel.transform);
         CreateSettingsButton(lobbyPanel.transform);
         settingsPanel = CreateSettingsPanel();
         SetControls(saved = ForgottenGameSettings.Load());
@@ -179,12 +180,12 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         sensitivityValue.text = (sensitivitySlider.value / 100f).ToString("0.00") + "x";
         chatValue.text = draft.GameChatEnabled ? "ON" : "OFF";
         invertValue.text = draft.InvertLook ? "ON" : "OFF";
-        chatButton.image.color = draft.GameChatEnabled ? UI.Accent : UI.Control;
-        invertButton.image.color = draft.InvertLook ? UI.Accent : UI.Control;
+        UI.SetSelected(chatButton, draft.GameChatEnabled);
+        UI.SetSelected(invertButton, draft.InvertLook);
         for (int i = 0; i < qualityButtons.Length; i++)
-            qualityButtons[i].image.color = draft.GraphicsQuality == i ? UI.Accent : UI.Control;
+            UI.SetSelected(qualityButtons[i], draft.GraphicsQuality == i);
         for (int i = 0; i < frameButtons.Length; i++)
-            frameButtons[i].image.color = draft.FrameRate == (i == 0 ? 30 : 60) ? UI.Accent : UI.Control;
+            UI.SetSelected(frameButtons[i], draft.FrameRate == (i == 0 ? 30 : 60));
         graphicsDescription.text = draft.GraphicsQuality == 0
             ? "LOW  /  Reduced resolution and shadows. Start here on older phones."
             : draft.GraphicsQuality == 1
@@ -192,7 +193,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
                 : "HIGH  /  Full resolution, longer shadows and smoother edges.";
         bool changed = !draft.Equals(saved);
         stateLabel.text = changed ? "Unsaved changes" : "All changes saved";
-        stateLabel.color = changed ? new Color32(231, 168, 108, 255) : UI.Muted;
+        stateLabel.color = changed ? UI.Accent : UI.Muted;
         previewJoystick.localScale = Vector3.one * (draft.HudScale * 0.43f);
         previewChat.localScale = Vector3.one * (draft.HudScale * 0.7f);
     }
@@ -203,7 +204,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         for (int i = 0; i < pages.Length; i++)
         {
             pages[i].SetActive(i == index);
-            tabs[i].image.color = i == index ? UI.Accent : UI.Control;
+            UI.SetSelected(tabs[i], i == index);
         }
         scroll.content = (RectTransform)pages[index].transform;
         Canvas.ForceUpdateCanvases();
@@ -273,7 +274,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         overlay.gameObject.AddComponent<GraphicRaycaster>();
         if (Application.isPlaying)
             DontDestroyOnLoad(overlay.gameObject);
-        UI.Paint(overlay, new Color(0.005f, 0.008f, 0.012f, 0.96f));
+        UI.Paint(overlay, new Color(0.04f, 0.025f, 0.02f, 0.70f));
         RectTransform safe = UI.Rect("Safe Area", overlay);
         UI.Stretch(safe);
         safe.gameObject.AddComponent<MobileSafeArea>();
@@ -286,7 +287,9 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         UI.Layout(header.gameObject, 64f);
         TextMeshProUGUI eyebrow = UI.Text(header, "Eyebrow", "FORGOTTEN  /  PREFERENCES", 13f, true);
         UI.Anchors(eyebrow.rectTransform, new Vector2(0f, 0.65f), Vector2.one);
-        TextMeshProUGUI title = UI.Text(header, "Title", "Make it your game.", 30f);
+        TextMeshProUGUI title = UI.Text(header, "Title", "SETTINGS", 30f);
+        title.color = UI.Accent;
+        title.fontStyle = FontStyles.Bold | FontStyles.Italic;
         UI.Anchors(title.rectTransform, Vector2.zero, new Vector2(0.75f, 0.65f));
         TextMeshProUGUI hint = UI.Text(header, "Hint", "SAVED ON THIS DEVICE", 12f, true);
         hint.alignment = TextAlignmentOptions.Right;
@@ -295,7 +298,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         RectTransform tabBar = UI.Rect("Tabs", card);
         UI.Layout(tabBar.gameObject, 48f);
         UI.Horizontal(tabBar, 8f);
-        string[] labels = { "01   AUDIO", "02   DISPLAY", "03   CONTROLS", "04   CHAT" };
+        string[] labels = { "AUDIO", "DISPLAY", "CONTROLS", "TEAM CHAT" };
         for (int i = 0; i < tabs.Length; i++)
         {
             int index = i;
@@ -398,14 +401,15 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         chatButton.onClick.AddListener(() => ChangeChoice(chat: !draft.GameChatEnabled));
         Description(parent, "IN YOUR MATCH", 14f, true);
         Description(parent, "Open CHAT to message everyone in your room. Your lobby username appears beside your messages.", 18f);
-        Description(parent, "Up to 120 characters per message. The latest six messages stay visible.", 16f, true);
-        Description(parent, "Available in multiplayer only. This setting takes effect in your next match.", 16f, true);
+        Description(parent, "120 characters per message. Recent messages appear on your HUD; open CHAT for the last 24 messages.", 16f, true);
+        Description(parent, "Turning chat off hides messages and prevents sending. Save & Back confirms your choice.", 16f, true);
     }
 
     private TextMeshProUGUI Description(Transform parent, string value, float size, bool muted = false)
     {
         TextMeshProUGUI text = UI.Text(parent, value.Length > 0 ? value : "Description", value, size, muted);
         UI.Layout(text.gameObject, size >= 24f ? 32f : 30f);
+        text.GetComponent<LayoutElement>().preferredHeight = -1f;
         return text;
     }
 
@@ -449,6 +453,8 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         foreach (Graphic graphic in joystick.GetComponentsInChildren<Graphic>())
             graphic.raycastTarget = false;
         previewJoystick = (RectTransform)joystick.transform.Find("Background");
+        previewJoystick.GetComponent<Image>().color = UI.Control;
+        previewJoystick.Find("Handle").GetComponent<Image>().color = UI.Accent;
         Button chat = UI.Button(preview, "Chat Preview", "CHAT");
         previewChat = (RectTransform)chat.transform;
         previewChat.anchorMin = previewChat.anchorMax = new Vector2(0.88f, 0.5f);

@@ -13,40 +13,36 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 {
     [Header("Movement")]
     public float moveSpeed = 4.5f;
-    public float sprintSpeed = 7.5f; // used instead of moveSpeed while sprint is held/touched
+    public float sprintSpeed = 7.5f; // used instead of moveSpeed while the joystick is touching the sprint icon
     public float turnSpeed = 140f;
     public float gravity = -9.81f;
 
     [Header("Crouch")]
-    public float crouchSpeed = 2f; // no sprinting while crouched
+    public float crouchSpeed = 2f; // no sprinting while crouched, this is the only speed used
     public float standingHeight = 2f;
     public float crouchingHeight = 1.2f;
-    public float crouchCameraHeight = 1.0f; // camera height while crouched
-    public float cameraCrouchLerpSpeed = 8f; // higher = snappier crouch transition
+    public float crouchCameraHeight = 1.0f; // where the camera sits (matches cameraOffset.y logic) while crouched
+    public float cameraCrouchLerpSpeed = 8f; // higher = snappier transition, lower = smoother/slower
 
     [Header("Camera")]
     public Vector3 cameraOffset = new Vector3(0f, 1.6f, 0f);
-    public float standingForwardOffset = 0.15f; // pushes camera forward out of the hood/mask mesh
-    public float crouchForwardOffset = 0.3f; // bigger than standing since the head tucks differently while crouched
+    public float standingForwardOffset = 0.15f; // pushes the camera forward out of the hood/mask mesh while standing
+    public float crouchForwardOffset = 0.3f; // needs to be bigger than standing since the head tucks differently while crouched
     public float cameraPitchMin = -80f;
     public float cameraPitchMax = 80f;
     public float lookSensitivity = 0.15f;
-    public float mouseLookMultiplier = 6f; // scales mouse deltas up to match touch deltas before lookSensitivity applies
 
     [Header("Touch Controls")]
-    public GameObject touchControlsCanvasPrefab; // Canvas with a TouchJoystick and TouchLookSurface somewhere inside
+    public GameObject touchControlsCanvasPrefab; // a hand-built Canvas with a TouchJoystick and a TouchLookSurface on it somewhere inside
 
     [Header("Animation")]
-    [SerializeField] private Animator animator; // drag Player1's Animator in manually
+    [SerializeField] private Animator animator; // drag Player1's Animator in manually, GetComponentInChildren was grabbing the wrong one
+    [SerializeField] private Transform headBone; // drag the actual head bone in here, NOT the camera - the head tilts to match where the camera is looking
+    public float headLookAxisSign = -1f; // some rigs need this flipped to +1 if the head bends the wrong way, just flip the sign if so
 
-    [Header("Torch")]
-    [SerializeField] private Transform torchLightAim; // the actual "Torch Light" object - NOT the visible torch model,
-    // that one stays parented to the head bone in the Hierarchy instead and just rides along with animation
-    public float torchHeight = 1.4f; // roughly chest height - where the light itself sits, regardless of what pose the model's in
+    [SerializeField] private Transform torchAnchor; // an empty object parented to the ROOT (not a bone) - the torch lives under this instead of the hand now, so it aims with the camera but doesn't inherit arm-swing animation
 
-    [SerializeField] private PlayerHealthStateMachine health; // drag the same GameObject's health state machine here
-
-    // every spawned player adds itself here, so anything needing every visible player (like a minimap) can find them
+    // every spawned player adds itself here, so things that needs to find every player currently visible (like a minimap), gets it here
     private static List<PlayerController> allPlayers = new List<PlayerController>();
     public static List<PlayerController> All
     {
@@ -54,58 +50,38 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     }
 
     private CharacterController controller;
-    private PlayerInventory playerInventory; // only used by the I/P test shortcuts below
     private Camera playerCamera;
+    private PlayerHealthStateMachine health;
+    private ForgottenSettingsSnapshot settings;
+    private GameObject controlsInstance;
+    public bool HasEscaped { get; private set; }
     private Transform cameraTransform;
     private float cameraPitch = 0f;
     private float verticalVelocity = 0f;
     private bool isCrouching = false;
-    private float currentCameraHeight; // lerps toward standing/crouching height each frame
-    private float currentForwardOffset; // lerps toward standing/crouching forward offset
+    private float currentCameraHeight; // lerps toward standing/crouching height each frame instead of snapping
+    private float currentForwardOffset; // lerps toward standing/crouching forward offset the same way
 
     private TouchJoystick moveJoystick;
     private TouchLookSurface lookSurface;
-    private PlayerFlashLight flashlight; // grabbed in Awake now, reused by ToggleFlashlight
+    private PlayerFlashLight flashlight; // found once in SetupTouchControls, reused by ToggleFlashlight later
     private bool isFlashlightOn = false;
-
-    [Header("Remote Smoothing")]
-    public float remoteLerpSpeed = 12f; // how fast a non-owned copy slides toward the real position - higher snaps quicker, lower is smoother but laggier
-    private Vector3 networkPosition; // latest position received for this player if we don't own it
-    private Quaternion networkRotation; // same idea but for facing direction
-    public bool IsFlashlightOn // lets the monster check if this player's light is on
+    public bool IsFlashlightOn // lets the monster check if this player's light is on without needing its own reference to the flashlight
     {
         get { return isFlashlightOn; }
     }
 
-    private float animatorSpeedParam = 0f; // the value UpdateAnimator works out on the owner - remote clients never run
-    // their own Update() loop for this player, so this needs to travel over OnPhotonSerializeView like cameraPitch does
-
-    private float movementNoiseLevel = 0f; // computed on the owner each frame, synced to others via OnPhotonSerializeView
-    public float MovementNoiseLevel // 0 = silent, 1 = loud - monster uses this to gauge how easy this player is to find
+    private float movementNoiseLevel = 0f; // computed on the owning client each frame, synced to everyone else via OnPhotonSerializeView below
+    public float MovementNoiseLevel // 0 = silent (crouching, or standing still), 1 = loud/very noticeable (sprinting) - the monster uses this to gauge how easily it can pinpoint this player
     {
         get { return movementNoiseLevel; }
     }
 
-    public bool HasEscaped { get; private set; } = false; // set once by WinTrigger when this player wins
-
-    public void MarkEscaped() // flips HasEscaped, WinTrigger already handles the RPC to every client
-    {
-        HasEscaped = true;
-    }
-
-    private void Awake() // sets up references and starting camera values
+    private void Awake() // grabs the CharacterController off this object
     {
         controller = GetComponent<CharacterController>();
-        playerInventory = GetComponent<PlayerInventory>();
-
-        // grabbed here instead of SetupTouchControls so every client's copy of this player has it,
-        // not just the local owner's - otherwise the SetFlashlightState RPC has nothing to call on remote clients
-        flashlight = GetComponentInChildren<PlayerFlashLight>();
-
-        // starting guess for remote copies, gets overwritten the moment the first network packet comes in
-        networkPosition = transform.position;
-        networkRotation = transform.rotation;
-
+        health = GetComponent<PlayerHealthStateMachine>();
+        if (health == null) health = gameObject.AddComponent<PlayerHealthStateMachine>();
         currentCameraHeight = cameraOffset.y;
         currentForwardOffset = standingForwardOffset;
     }
@@ -120,12 +96,17 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         allPlayers.Remove(this);
     }
 
-    private void Start() // sets up camera and touch controls if this is your player, otherwise disables movement
+    private void Start() // this is setting your player with a camera and touch controls with a else/if statement 
     {
         if (photonView.IsMine)
         {
+            settings = ForgottenGameSettings.Load();
             SetupLocalCamera();
             SetupTouchControls();
+            var spectator = gameObject.AddComponent<SpectatorController>();
+            spectator.SetCamera(playerCamera);
+            health.Configure(this, spectator);
+            if (GetComponent<PlayerInventory>() == null) gameObject.AddComponent<PlayerInventory>();
         }
         else
         {
@@ -137,142 +118,60 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (photonView.IsMine == false)
         {
-            // not our player - the CharacterController is disabled on this copy (see Start()), so just
-            // slide the raw transform toward the last position/rotation we heard about over the network
-            transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * remoteLerpSpeed);
-            transform.rotation = Quaternion.Lerp(transform.rotation, networkRotation, Time.deltaTime * remoteLerpSpeed);
-
-
             return;
         }
 
-        if (health != null && health.IsDead) return;
+        bool typing = RoomChatUI.CapturesInput;
+        if (typing)
+        {
+            if (lookSurface != null) lookSurface.ConsumeLookDelta();
+            if (moveJoystick != null) moveJoystick.ResetInput();
+        }
+        else HandleLook();
 
-    HandleLook();
-
-        HandleLook();
-
-        // combine horizontal move + gravity into one Move call so we don't get double-move jitter
-        Vector3 horizontalMove = HandleMove();
+        // grab the horizontal move direction from the joystick, then let gravity add the vertical part,
+        // then move the controller ONCE with both combined so we don't get double-move jitter
+        Vector3 horizontalMove = typing ? Vector3.zero : HandleMove();
         Vector3 gravityMove = ApplyGravity();
         controller.Move((horizontalMove + gravityMove) * Time.deltaTime);
 
         UpdateMovementNoiseLevel();
         UpdateAnimator();
-
-        // keyboard shortcuts for testing in the Editor - touch buttons call the same methods on mobile
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            ToggleFlashlight();
-        }
-
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            ToggleCrouch();
-        }
-
-        // P/I are PC stand-ins for the pickup/install UI buttons, just call PlayerInventory's own methods
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            TryPickUpNearestPiece();
-        }
-
-        if (Input.GetKeyDown(KeyCode.I))
-        {
-            playerInventory?.OnInstallButtonDown();
-        }
-
-        if (Input.GetKey(KeyCode.I))
-        {
-            playerInventory?.UpdateInstallProgress();
-        }
-
-        if (Input.GetKeyUp(KeyCode.I))
-        {
-            playerInventory?.OnInstallButtonUp();
-        }
     }
 
-    private void TryPickUpNearestPiece() // finds and picks up the closest piece, mirrors PlayerInventory's own search
-    {
-        if (playerInventory == null || playerInventory.GetHeldPiece() != null)
-        {
-            return;
-        }
-
-        GeneratorPiece[] allPieces = FindObjectsOfType<GeneratorPiece>();
-        GeneratorPiece closestPiece = null;
-        float closestDistance = 3f; // matches PlayerInventory's own pickup range
-
-        foreach (GeneratorPiece piece in allPieces)
-        {
-            if (piece.IsPickedUp())
-            {
-                continue;
-            }
-
-            float distance = Vector3.Distance(transform.position, piece.transform.position);
-            if (distance < closestDistance)
-            {
-                closestPiece = piece;
-                closestDistance = distance;
-            }
-        }
-
-        if (closestPiece != null)
-        {
-            playerInventory.PickUpPiece(closestPiece);
-        }
-    }
-
-    private void UpdateMovementNoiseLevel() // works out how "loud" this player is right now, only meaningful on the owner
+    private void UpdateMovementNoiseLevel() // works out how "loud" this player currently is, only meaningful on the owner - gets synced to everyone else below
     {
         if (isCrouching)
         {
-            movementNoiseLevel = 0f; // crouching is always silent
+            movementNoiseLevel = 0f; // crouching is meant to be the sneaky option, no noise regardless of stick input
             return;
         }
 
-        movementNoiseLevel = IsSprintHeld() ? 1f : GetCombinedMoveInput().magnitude;
-    }
-
-    private Vector2 GetCombinedMoveInput() // keyboard input if pressed, otherwise falls back to the touch joystick
-    {
-        Vector2 keyboardInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        if (keyboardInput.sqrMagnitude > 0.01f)
+        if (moveJoystick == null)
         {
-            return keyboardInput;
+            movementNoiseLevel = 0f;
+            return;
         }
 
-        return moveJoystick != null ? moveJoystick.Value : Vector2.zero;
+        movementNoiseLevel = moveJoystick.IsSprinting ? 1f : moveJoystick.Value.magnitude;
     }
 
-    private bool IsSprintHeld() // Left Shift OR the touch joystick's sprint icon
-    {
-        if (Input.GetKey(KeyCode.LeftShift))
-        {
-            return true;
-        }
-
-        return moveJoystick != null && moveJoystick.IsSprinting;
-    }
-
-    private void UpdateAnimator() // feeds movement speed into the Animator, capped so walking can't cross into the Sprint tier
+    private void UpdateAnimator() // feeds a normalized 0-1 Speed into the Animator, capped so a max-stretch walk can't accidentally cross into the Sprint tier
     {
         if (animator == null)
         {
             return;
         }
 
-        float stickMagnitude = GetCombinedMoveInput().magnitude;
-        bool sprinting = isCrouching == false && IsSprintHeld();
+        float stickMagnitude = moveJoystick != null ? moveJoystick.Value.magnitude : 0f;
+        bool sprinting = isCrouching == false && moveJoystick != null && moveJoystick.IsSprinting;
 
-        // 0.85 cap keeps full walking below the 0.9 Sprint threshold, sprinting jumps straight to 1
-        animatorSpeedParam = sprinting ? 1f : Mathf.Min(stickMagnitude, 0.85f);
-        animator.SetFloat("Speed", animatorSpeedParam);
+        // 0.85 cap keeps full-stretch walking below the 0.9 Sprint threshold, sprinting jumps straight to 1
+        float speedParam = sprinting ? 1f : Mathf.Min(stickMagnitude, 0.85f);
+        animator.SetFloat("Speed", speedParam);
     }
 
-    private Vector3 ApplyGravity() // applies gravity so the character stays grounded, returns the vertical movement only
+    private Vector3 ApplyGravity() // sets gravity basically so the character is grounded and animations/spawning runs smoothly, returns the vertical part only
     {
         if (controller.isGrounded)
         {
@@ -286,66 +185,53 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         return Vector3.up * verticalVelocity;
     }
 
-    private void LateUpdate() // moves the camera and aims the torch light after movement/look, runs for every client
+    private void LateUpdate() // moves the camera after this frame's movement/look is done, and tilts the head to match - runs for every client, not just the owner
     {
         if (photonView.IsMine && playerCamera != null)
         {
             UpdateCameraPosition();
         }
 
-        ApplyTorchAim(); // points the actual light at wherever the camera's aiming, same pivot idea as the camera itself
+        ApplyHeadLook(); // runs on everyone's copy, using either our own cameraPitch or the synced value from the owner
+        ApplyTorchAim(); // same idea, but for the torch instead of the head
     }
 
-    private void ApplyTorchAim() // points the actual Torch Light wherever the camera's aiming, completely separate from
-    // the animated skeleton - the visible torch model still sticks to the head bone in the Hierarchy for looks, this
-    // just moves the light source itself so the beam reliably tracks the look direction instead of following animation
+    private void ApplyTorchAim() // aims the torch up/down with cameraPitch - "around" (yaw) already happens for free since torchAnchor is a child of the root, which turns when you look left/right
     {
-        if (torchLightAim == null)
+        if (torchAnchor == null)
         {
             return;
         }
 
-        // same pivot trick UpdateCameraPosition uses - fixed point straight off the body, rotated right there
-        // instead of swinging through space from a hinge further up the rig, which is what caused the arcing
-        Vector3 lightPosition = transform.position + Vector3.up * torchHeight;
-        Quaternion lightRotation = Quaternion.Euler(cameraPitch, transform.eulerAngles.y, 0f);
-
-        torchLightAim.position = lightPosition;
-        torchLightAim.rotation = lightRotation;
+        torchAnchor.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
     }
 
-    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) // syncs cameraPitch and noise level to other clients
+    private void ApplyHeadLook() // tilts the head bone to match cameraPitch, applied AFTER the Animator has already posed the character this frame
+    {
+        if (headBone == null)
+        {
+            return;
+        }
+
+        // stack this rotation on top of whatever pose the Animator just set, rather than replacing it outright
+        headBone.localRotation = headBone.localRotation * Quaternion.Euler(headLookAxisSign * cameraPitch, 0f, 0f);
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) // syncs cameraPitch and movementNoiseLevel to everyone else, since only the owner actually computes these
     {
         if (stream.IsWriting)
         {
-            // position/rotation first just felt right, doesn't actually matter what order as long as both ends match
-            stream.SendNext(transform.position);
-            stream.SendNext(transform.rotation);
             stream.SendNext(cameraPitch);
             stream.SendNext(movementNoiseLevel);
-            stream.SendNext(animatorSpeedParam);
         }
         else
         {
-            // don't touch transform.position/rotation directly here - Update() lerps toward these every
-            // frame instead, snapping straight to the raw network value looks jittery on a laggy connection
-            networkPosition = (Vector3)stream.ReceiveNext();
-            networkRotation = (Quaternion)stream.ReceiveNext();
-
             cameraPitch = (float)stream.ReceiveNext();
             movementNoiseLevel = (float)stream.ReceiveNext();
-            animatorSpeedParam = (float)stream.ReceiveNext();
-
-            // remote copies of this player skip UpdateAnimator entirely (Update() bails out early up top for them),
-            // so this is the only place their Animator's Speed ever gets set - apply it as soon as it arrives
-            if (animator != null)
-            {
-                animator.SetFloat("Speed", animatorSpeedParam);
-            }
         }
     }
 
-    private void HandleLook() // reads touch and mouse look input, turns the player and tilts the camera
+    private void HandleLook() // reads the drag surface and turns the player + tilts the camera
     {
         Vector2 lookDelta = Vector2.zero;
         if (lookSurface != null)
@@ -353,19 +239,17 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
             lookDelta = lookSurface.ConsumeLookDelta();
         }
 
-        // scales mouse deltas up to match touch deltas so both work together
-        Vector2 mouseDelta = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
-        lookDelta += mouseDelta * mouseLookMultiplier;
-
-        float yawAmount = lookDelta.x * lookSensitivity * turnSpeed * Time.deltaTime * 0.3f;
+        float sensitivity = lookSensitivity * settings.LookSensitivity;
+        float yawAmount = lookDelta.x * sensitivity * turnSpeed * Time.deltaTime * 0.3f;
         transform.Rotate(Vector3.up, yawAmount, Space.World);
 
-        cameraPitch = cameraPitch - (lookDelta.y * lookSensitivity);
+        cameraPitch -= lookDelta.y * sensitivity * (settings.InvertLook ? -1f : 1f);
         cameraPitch = Mathf.Clamp(cameraPitch, cameraPitchMin, cameraPitchMax);
     }
 
     public void ToggleCrouch() // hook this up to your touch UI crouch button's OnClick
     {
+        if (RoomChatUI.CapturesInput) return;
         if (photonView.IsMine == false)
         {
             return;
@@ -375,7 +259,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     }
 
     [PunRPC]
-    private void SetCrouchState(bool crouching) // runs on every client, updates crouch pose and collider size
+    private void SetCrouchState(bool crouching) // runs on every client so everyone sees the crouch pose and the smaller collider
     {
         isCrouching = crouching;
 
@@ -391,6 +275,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     public void ToggleFlashlight() // hook this up to your touch UI flashlight button's OnClick
     {
+        if (RoomChatUI.CapturesInput) return;
         if (photonView.IsMine == false)
         {
             return;
@@ -400,7 +285,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     }
 
     [PunRPC]
-    private void SetFlashlightState(bool isOn) // runs on every client, turns the flashlight on/off
+    private void SetFlashlightState(bool isOn) // runs on every client, this lives on the same object as the PhotonView so Photon can actually find it
     {
         isFlashlightOn = isOn;
 
@@ -410,17 +295,15 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         }
     }
 
-    [PunRPC]
-    private void TakeDamage(int amount)
+    private Vector3 HandleMove() // reads the joystick, returns just the horizontal movement (no gravity in here anymore)
     {
-        if (health == null || health.IsDead) return;
-        health.CurrentHealth -= amount;
-    }
-
-    private Vector3 HandleMove() // reads WASD or the joystick, returns horizontal movement only (no gravity)
-    {
-        Vector2 stickInput = GetCombinedMoveInput();
-        bool sprinting = IsSprintHeld();
+        Vector2 stickInput = Vector2.zero;
+        bool sprinting = false;
+        if (moveJoystick != null)
+        {
+            stickInput = moveJoystick.Value;
+            sprinting = moveJoystick.IsSprinting;
+        }
 
         Vector3 moveDirection = new Vector3(stickInput.x, 0f, stickInput.y);
         moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
@@ -428,30 +311,40 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         float currentSpeed;
         if (isCrouching)
         {
-            currentSpeed = crouchSpeed; // crouched always overrides sprint
+            currentSpeed = crouchSpeed; // crouched always overrides sprint, doesn't matter if the icon is being touched
         }
         else
         {
             currentSpeed = sprinting ? sprintSpeed : moveSpeed;
         }
 
-        Vector3 worldMove = transform.TransformDirection(moveDirection) * currentSpeed;
+        Vector3 worldMove = transform.TransformDirection(moveDirection) * currentSpeed * health.SpeedMultiplier;
 
         return worldMove;
     }
 
     private void SetupLocalCamera() // creates this player's own camera
     {
+        // Scene preview cameras must not compete with the local player's view/audio.
+        foreach (AudioListener listener in FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
+        {
+            listener.enabled = false;
+            Camera previewCamera = listener.GetComponent<Camera>();
+            if (previewCamera != null) previewCamera.enabled = false;
+        }
         GameObject cameraObject = new GameObject("Player Camera");
+        cameraObject.tag = "MainCamera";
         playerCamera = cameraObject.AddComponent<Camera>();
-        playerCamera.nearClipPlane = 0.05f; // default 0.3 clips hand-held stuff like the torch
+        playerCamera.fieldOfView = settings.FieldOfView;
+        cameraObject.AddComponent<AudioListener>();
+        playerCamera.nearClipPlane = 0.05f; // default 0.3 clips hand-held stuff like the torch since it sits close to the face
         cameraTransform = cameraObject.transform;
         UpdateCameraPosition();
     }
 
-    private void UpdateCameraPosition() // positions the camera at head height, pivoting properly instead of a flat offset
+    private void UpdateCameraPosition() // places the camera inside the player's head, nudged forward so the camera dosent show the gas mask/hood when looking around
     {
-        // blends height and forward push toward standing or crouching, instead of snapping instantly
+        // smoothly blend both the height AND the forward push toward standing or crouching, rather than snapping instantly
         float targetHeight = isCrouching ? crouchCameraHeight : cameraOffset.y;
         float targetForwardOffset = isCrouching ? crouchForwardOffset : standingForwardOffset;
 
@@ -459,44 +352,50 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         currentForwardOffset = Mathf.Lerp(currentForwardOffset, targetForwardOffset, Time.deltaTime * cameraCrouchLerpSpeed);
 
         Vector3 headPosition = transform.position + Vector3.up * currentCameraHeight;
-
-        // rotates the forward offset with the camera so it orbits headPosition properly instead of clipping at steep angles
-        Quaternion lookRotation = Quaternion.Euler(cameraPitch, transform.eulerAngles.y, 0f);
-        Vector3 forwardNudge = lookRotation * Vector3.forward * currentForwardOffset;
-
+        Vector3 forwardNudge = transform.forward * currentForwardOffset;
         cameraTransform.position = headPosition + forwardNudge;
-        cameraTransform.rotation = lookRotation;
+
+        cameraTransform.rotation = Quaternion.Euler(
+            cameraPitch,
+            transform.eulerAngles.y,
+            0f
+        );
     }
 
-    private void SetupTouchControls() // spawns the touch controls canvas and grabs its joystick/look surface/buttons
+    private void SetupTouchControls() // spawns the hand-built touch controls canvas and grabs its joystick/look surface/buttons
     {
         EnsureEventSystem();
 
         GameObject canvasInstance = Instantiate(touchControlsCanvasPrefab);
+        controlsInstance = canvasInstance;
         moveJoystick = canvasInstance.GetComponentInChildren<TouchJoystick>();
         lookSurface = canvasInstance.GetComponentInChildren<TouchLookSurface>();
+        if (moveJoystick != null) moveJoystick.transform.localScale *= settings.HudScale;
+        foreach (Button button in canvasInstance.GetComponentsInChildren<Button>(true))
+            button.transform.localScale *= settings.HudScale;
 
         WireUpButton(canvasInstance, "CrouchButton", ToggleCrouch);
 
-        // flashlight reference is already grabbed in Awake() for every client - the RPC that toggles it
-        // still has to live here on PlayerController though, since Photon RPCs can't target child components directly
+        // flashlight lives on the child torch object, but the actual RPC has to live here on PlayerController
+        // since Photon RPCs can't target components sitting on child objects
+        flashlight = GetComponentInChildren<PlayerFlashLight>();
         WireUpButton(canvasInstance, "FlashlightButton", ToggleFlashlight);
+        Transform chatButton = FindDeepChild(canvasInstance.transform, "ChatButton");
+        if (chatButton != null)
+            FindAnyObjectByType<RoomChatUI>()?.BindHudButton(chatButton.GetComponent<Button>());
     }
 
-    // finds a button by name and wires it to a method in code, since the canvas is only created at runtime
-    // (there's nothing to drag a reference to in the Inspector ahead of time)
     private void WireUpButton(GameObject canvasInstance, string childName, UnityEngine.Events.UnityAction onClickAction)
     {
-        // searches anywhere under the canvas, no matter how deeply nested
+        // find the button by name ANYWHERE under the canvas, no matter how deeply nested,
+        // since it can't be wired up in the Inspector ahead of time (the player/canvas don't exist yet at design time)
         Transform found = FindDeepChild(canvasInstance.transform, childName);
         if (found == null)
         {
-            // only prints if the name doesn't match anything - check the button's actual name in the Hierarchy
             Debug.Log("Couldn't find a button named " + childName + " under the touch controls canvas");
             return;
         }
 
-        // needs an actual Button component to have onClick - comes back null if childName pointed at the wrong object
         Button button = found.GetComponent<Button>();
         if (button != null)
         {
@@ -504,17 +403,35 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         }
     }
 
-    // searches every child and grandchild, since Transform.Find only checks direct children one level down
+    [PunRPC]
+    public void TakeDamage(int amount, PhotonMessageInfo info)
+    {
+        if (info.Sender != PhotonNetwork.MasterClient || amount <= 0 || health.IsDead || HasEscaped) return;
+        health.CurrentHealth -= amount;
+    }
+
+    public void MarkEscaped()
+    {
+        HasEscaped = true;
+        enabled = false;
+        if (controlsInstance != null) controlsInstance.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        if (controlsInstance != null) Destroy(controlsInstance);
+        if (playerCamera != null) Destroy(playerCamera.gameObject);
+    }
+
     private Transform FindDeepChild(Transform parent, string name) // searches every descendant, not just direct children
     {
-        foreach (Transform child in parent) // walks through parent's direct children first
+        foreach (Transform child in parent)
         {
             if (child.name == name)
             {
-                return child; // found it at this level, stop here
+                return child;
             }
 
-            // not this one, check if it has a matching child further down
             Transform foundInGrandchildren = FindDeepChild(child, name);
             if (foundInGrandchildren != null)
             {
@@ -522,7 +439,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
             }
         }
 
-        return null; // nothing named childName anywhere in this branch
+        return null;
     }
 
     private void EnsureEventSystem() // makes sure exactly one EventSystem exists in the scene

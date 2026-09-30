@@ -32,7 +32,11 @@ client drives monster AI; local players own camera, touch controls, inventory UI
 Settings use a draft/saved snapshot and PlayerPrefs. Audio/graphics apply on startup;
 FOV, HUD scale and look preferences are read by the spawned player. Graphics presets
 clone the URP asset at runtime rather than modifying source render assets.
-The chat switch stores a preference, not a complete team-chat implementation.
+RoomChatSession now sends reliable, uncached Photon room events (code 71). It validates
+sender identity, bounds text/history and rate-limits messages. GameplaySession owns its
+lifetime. RoomChatUI binds the existing touch chat button, displays recent messages and
+blocks player/spectator/interaction input while composing. Settings.Saved updates the
+chat preference. Messages are session-only, not stored in PlayerPrefs or sent globally.
 
 GeneratorAssembly coordinates five pieces, its exit door and WinTrigger. The Generator
 branch's scene-only inventory prototype is not the actual network player. The spawned

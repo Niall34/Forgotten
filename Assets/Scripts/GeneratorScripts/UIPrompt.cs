@@ -41,6 +41,11 @@ public class UIPrompt : MonoBehaviourPun
 
     private void Update()
     {
+        if (RoomChatUI.CapturesInput)
+        {
+            playerInventory.OnInstallButtonUp();
+            return;
+        }
         // this handles install button 
         if (installButton != null && installPromptPanel.activeInHierarchy)
         {

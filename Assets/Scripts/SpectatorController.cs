@@ -31,6 +31,7 @@ namespace Forgotten.Player
 
         private void Update()
         {
+            if (RoomChatUI.CapturesInput) return;
             if (!spectating || spectatorCamera == null || !spectatorCamera.enabled) return;
 
             livingPlayers.RemoveAll(p => p == null || p.CurrentState == PlayerLifeState.Dead);

@@ -6,6 +6,7 @@ using UnityEngine;
 /// </summary>
 public static class ForgottenGameSettings
 {
+    public static event System.Action<ForgottenSettingsSnapshot> Saved;
     private const string Prefix = "Forgotten.Settings.";
     private const string GameVolumeKey = Prefix + "MasterVolume";
     private const string MusicVolumeKey = Prefix + "MusicVolume";
@@ -77,6 +78,7 @@ public static class ForgottenGameSettings
         PlayerPrefs.DeleteKey(LegacyGameChatKey);
         PlayerPrefs.Save();
         Apply(sanitized);
+        Saved?.Invoke(sanitized);
     }
 
     public static void Apply(ForgottenSettingsSnapshot settings)

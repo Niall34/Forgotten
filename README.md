@@ -34,12 +34,17 @@ player and move the health/spectator scripts into Unity's Assets folder.
 - Field of view: 60–100 degrees.
 - HUD and control scale: 70–110%.
 - Look sensitivity: 0.50–2.00x, with optional inverted vertical look.
-- Team text chat preference (on/off).
+- Working room text chat, with an on/off preference.
 - Separate Audio, Display, Controls and Chat tabs.
 - Save & Back, Back without saving, and confirmed Reset.
 
-The chat option saves a preference; a complete network game-chat feature is not
-implemented by that toggle.
+Settings use the lobby's title colour and font, with warm dark panels and matching
+selected controls. In a match, tap the speech-bubble button or press T to type a
+message, then SEND or Enter. BACK / Escape closes chat. Players in the same room see
+your username and message; the last three messages also appear briefly on the HUD.
+Messages are limited to 120 characters with a one-second send interval. The chat
+window retains up to 24 messages for this session. Saving chat OFF hides and clears
+messages and blocks sending/receiving. There is no voice chat or cross-room channel.
 
 | File | Responsibility |
 | --- | --- |
@@ -49,4 +54,6 @@ implemented by that toggle.
 | `ForgottenSettingsUI.cs` | Shared UI layout and styling. |
 | `ForgottenTouchJoyStick.cs` | Joystick used by the HUD-size preview. |
 | `MobileSafeArea.cs` | Safe-area layout for the settings screen. |
+| `RoomChatSession.cs` | Room messaging, sender validation and bounded session history. |
+| `RoomChatUI.cs` | Message entry, recent-message HUD and mobile keyboard layout. |
 

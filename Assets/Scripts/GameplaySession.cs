@@ -10,6 +10,8 @@ public class GameplaySession : MonoBehaviour
 
     private void Start()
     {
+        RoomChatSession chat = gameObject.AddComponent<RoomChatSession>();
+        gameObject.AddComponent<RoomChatUI>().Initialize(chat);
         SpawnLocalPlayer();
 
         if (PhotonNetwork.IsMasterClient) // set it so the master client spawns the monster so there is only one
