@@ -30,6 +30,7 @@ public class LobbyUI : MonoBehaviour
     public Button playButton;
     public Button hostButton;
     public Button joinOpenButton;
+    public Button quitButton; // drag your existing quit button in here
 
     [Header("Joining Lobby Panel")]
     public TMP_InputField joinCodeField;
@@ -50,11 +51,13 @@ public class LobbyUI : MonoBehaviour
     public TextMeshProUGUI statusText;
 
     [Header("Loading Popup")]
-    public GameObject loadingPopup; // full-screen overlay with a raycast-blocking image behind the text that blocks inputs
+    public GameObject loadingPopup; // full screen overlay with a raycast-blocking image behind the text that blocks inputs
     public TextMeshProUGUI loadingPopupText;
 
     [Header("Game Loading Panel")]
     public GameObject gameLoadingPanel; // shown while the actual gameplay scene loads in
+
+    private static LobbyUI current; // this object survives scene loads, so coming back to the lobby scene would leave two of them without this
 
     private Canvas canvas;
     private NetworkManager net;
@@ -74,12 +77,16 @@ public class LobbyUI : MonoBehaviour
     private int lastSeenErrorVersion = 0;
     private int lastSeenPlayerListVersion = -1;
     private bool handledMatchStarting = false;
-    private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene - stops
-    // CheckForMatchStarting from re-showing the cover if MatchStarting only arrives after we're already there (it's a
-    // separate network round-trip from the scene load itself, so it can genuinely show up late)
+    private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene 
+ 
 
     private void Awake() // wires up every button, loads the saved name, and shows the right starting panel
     {
+        if (current != null && current != this)
+        {
+            Destroy(current.gameObject); // the old one still points at the previous scene's LobbyStage, the fresh one takes over
+        }
+        current = this;
 
         EnsureEventSystem();
         DontDestroyOnLoad(gameObject);
@@ -95,6 +102,10 @@ public class LobbyUI : MonoBehaviour
         playButton.onClick.AddListener(OnPlayClicked);
         hostButton.onClick.AddListener(OnHostClicked);
         joinOpenButton.onClick.AddListener(OnJoinOpenClicked);
+        if (quitButton != null)
+        {
+            quitButton.onClick.AddListener(OnQuitClicked);
+        }
         joinConfirmButton.onClick.AddListener(OnJoinConfirmClicked);
         joinCancelButton.onClick.AddListener(OnJoinCancelClicked);
         readyButton.onClick.AddListener(OnReadyClicked);
@@ -272,13 +283,15 @@ public class LobbyUI : MonoBehaviour
         if (net.MatchStarting && handledMatchStarting == false)
         {
             handledMatchStarting = true;
+            if (hostedCodeText != null)
+            {
+                hostedCodeText.text = ""; // the code shows on the pause menu once the match is going
+            }
             SetStatus("Starting...");
             settingsMenu.HideImmediately();
             settingsMenu.StopLobbyMusic();
 
-            // MatchStarting can arrive a moment AFTER the scene itself already finished loading - it's a separate
-            // network round-trip, not tied to the local scene swap. if that's already happened, showing the cover
-            // now would just leave it stuck on screen forever, since nothing's left to hide it a second time
+            // MatchStarting can arrive a moment after the scene itself already finished loading, it's a separate network round-trip, not tied to the local scene swap. if that's already happened, showing the cover now would just leave it stuck on screen forever, since nothing's left to hide it a second time
             if (hasEnteredGameplayScene == false)
             {
                 ShowPanel(null);
@@ -287,7 +300,7 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    private void HandleJoinCodeTyped(string typedValue) // forces the join-code field to stay uppercase as you type
+    private void HandleJoinCodeTyped(string typedValue) // forces the join code field to stay uppercase as you type
     {
         string upperCaseValue = typedValue.ToUpper();
         if (upperCaseValue != typedValue)
@@ -324,8 +337,7 @@ public class LobbyUI : MonoBehaviour
         wantsToHostAfterConnecting = false;
         codeToJoinAfterConnecting = "";
 
-        // show the cover right away - whether we're already connected or still need to connect first, we don't
-        // want a gap where nothing's covering the screen while that happens
+        // show the cover right away whether player has already connected or still need to connect first, don't want a gap where nothing's covering the screen while that happens
         settingsMenu.HideImmediately();
         settingsMenu.StopLobbyMusic();
         ShowPanel(null);
@@ -379,7 +391,7 @@ public class LobbyUI : MonoBehaviour
         SetStatus("Creating room...");
     }
 
-    private void OnJoinOpenClicked() // opens the join-code entry panel
+    private void OnJoinOpenClicked() // opens the join code entry panel
     {
         joinCodeField.text = "";
         SetStatus("");
@@ -432,6 +444,15 @@ public class LobbyUI : MonoBehaviour
         {
             readyButtonLabel.text = "READY UP";
         }
+    }
+
+    private void OnQuitClicked() // closes the game, in the editor it stops play mode instead since Application.Quit() does nothing there
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     private void OnStartClicked() // host-only, force-starts the match
@@ -525,7 +546,7 @@ public class LobbyUI : MonoBehaviour
         DontDestroyOnLoad(eventSystemObject);
     }
 
-    private void OnDestroy() // tidy up the subscription from Awake - this object should live for the whole game, but just in case
+    private void OnDestroy() // tidy up the subscription from Awake, this object should live for the whole game, but just in case
     {
         SceneManager.sceneLoaded -= HandleGameplaySceneLoaded;
     }

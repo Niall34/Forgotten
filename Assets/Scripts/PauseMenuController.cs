@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 // a simple local pause menu, press Escape  or tap the pause button to open/close it
@@ -5,7 +6,8 @@ using UnityEngine;
 public class PauseMenuController : MonoBehaviour
 {
     [Header("UI")]
-    public GameObject pausePanel; // drag in your pause menu panel here, should start INACTIVE in the Inspector
+    public GameObject pausePanel; // drag in your pause menu panel here, should start inactive in the Inspector
+    public TextMeshProUGUI roomCodeText; // optional, a text inside the pause panel, shows the room code while paused
 
     private bool isPaused = false;
 
@@ -17,20 +19,27 @@ public class PauseMenuController : MonoBehaviour
         }
     }
 
-    public void TogglePause() // hook this up to your pause button's OnClick
+    public void TogglePause() 
     {
         isPaused = !isPaused;
         ApplyPausedState(isPaused);
     }
 
-    public void ResumeButton() // hook this up to a Resume button inside the pause panel, if you have one - only ever resumes, never pauses
+    public void ResumeButton()
     {
         isPaused = false;
         ApplyPausedState(false);
     }
 
-    public void QuitButton() // hook this up to your Quit button
+    public void QuitButton() 
     {
+        // inside a room (solo counts) this goes back to the lobby instead of closing the game
+        if (NetworkManager.Instance != null && NetworkManager.Instance.InRoom)
+        {
+            NetworkManager.Instance.QuitToLobby();
+            return;
+        }
+
 #if UNITY_EDITOR
         // Application.Quit() does nothing while testing in the Editor, this stops Play mode instead
         UnityEditor.EditorApplication.isPlaying = false;
@@ -39,11 +48,18 @@ public class PauseMenuController : MonoBehaviour
 #endif
     }
 
-    private void ApplyPausedState(bool paused) // does the actual work - shows/hides the panel, freezes/unfreezes the game, shows/hides the cursor
+    private void ApplyPausedState(bool paused) // shows/hides the panel, freezes/unfreezes the game, shows/hides the cursor
     {
         if (pausePanel != null)
         {
             pausePanel.SetActive(paused);
+        }
+
+        if (roomCodeText != null)
+        {
+            NetworkManager net = NetworkManager.Instance;
+            bool showCode = paused && net != null && net.InRoom && net.IsSolo == false;
+            roomCodeText.text = showCode ? "Room code: " + net.RoomCode : "";
         }
 
         Time.timeScale = paused ? 0f : 1f;

@@ -59,6 +59,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     private byte lastRequestedMaxPlayers = DefaultMaxPlayers;
     private int hostRetryCount = 0;
     private bool isConnecting = false; //stops double clicks to prevent race conditions while loading
+    private bool leavingToLobby = false; // set by QuitToLobby so OnLeftRoom knows to load the lobby scene once photon has actually finished leaving
 
     // any script that needs the network manager call this
     public static NetworkManager Bootstrap()
@@ -86,6 +87,25 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         // whenever the host client loads a new scene every other client automatically follows along
         PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.GameVersion = gameVersion;
+
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDestroy() // stops listening for scene loads if this object ever gets destroyed
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode) // landing in the lobby scene means the last match (if there was one) is over
+    {
+        if (scene.name != lobbySceneName)
+        {
+            return;
+        }
+
+        Time.timeScale = 1f; // someone might have been sitting on the pause menu when the host pulled everyone back
+        MatchStarting = false; // otherwise the lobby UI thinks a match is starting again the moment it loads
+        SetLocalPlayerReady(false); // everyone has to ready up again for the next round (does nothing if we're not in a room)
     }
 
     private void ReportError(string message) // saves an error message and bumps ErrorVersion so other scripts notice it
@@ -234,6 +254,14 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
         goStraightToGameplay = false;
 
+        // the lobby and the main menu are the same scene, so hosting doesn't need a reload - reloading it made the host
+        // spawn a lobby character before the reload AND another one after, and guests joining later got both from photon's cache
+        string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (activeScene == sceneToLoad)
+        {
+            return;
+        }
+
         PhotonNetwork.LoadLevel(sceneToLoad);
     }
 
@@ -269,6 +297,12 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnLeftRoom() // photon callback: fires once left a room
     {
         RoomCode = "";
+
+        if (leavingToLobby)
+        {
+            leavingToLobby = false;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(lobbySceneName); // only this player goes back, everyone else carries on
+        }
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer) // photon callback: fires when another player joins
@@ -392,6 +426,39 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
 
         PhotonNetwork.LoadLevel(gameplaySceneName);
+    }
+
+    // what the pause menu's quit button does when you're in a room, depends on who's pressing it
+    public void QuitToLobby()
+    {
+        if (PhotonNetwork.InRoom == false)
+        {
+            return;
+        }
+
+        // the host takes everyone back with them, room stays alive so they can all ready up again
+        if (PhotonNetwork.IsMasterClient && IsSolo == false)
+        {
+            ReturnEveryoneToLobby();
+            return;
+        }
+
+        // guests and solo players just leave on their own, OnLeftRoom finishes the job once photon says we're out
+        leavingToLobby = true;
+        PhotonNetwork.LeaveRoom();
+    }
+
+    private void ReturnEveryoneToLobby() // host only, wipes the match objects then loads the lobby scene for every client
+    {
+        // players + monster, this also clears photon's cache so nobody joining later gets ghosts of them (or of the old lobby characters)
+        PhotonNetwork.DestroyAll();
+
+        PhotonNetwork.CurrentRoom.IsOpen = true; // BeginMatch closed it, reopen so the code works again
+        Hashtable properties = new Hashtable();
+        properties[StartedPropertyKey] = false;
+        PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+
+        PhotonNetwork.LoadLevel(lobbySceneName);
     }
 
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
