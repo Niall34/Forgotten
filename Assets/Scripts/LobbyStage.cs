@@ -49,7 +49,7 @@ public class LobbyStage : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
 
-        LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
+        LobbySpawnPoint[] spawnPoints = FindObjectsByType<LobbySpawnPoint>();
         if (spawnPoints.Length > 0)
         {
             Transform firstPoint = spawnPoints[0].transform;
@@ -95,7 +95,7 @@ public class LobbyStage : MonoBehaviour
     {
         // actor numbers start at 1, so this gives each player a different spawn point
         // and keeps them in the same seat if they rejoin - needs enough spawn points placed or this will throw
-        LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
+        LobbySpawnPoint[] spawnPoints = FindObjectsByType<LobbySpawnPoint>();
         int mySeat = PhotonNetwork.LocalPlayer.ActorNumber - 1;
         Transform chosenPoint = spawnPoints[mySeat].transform;
 

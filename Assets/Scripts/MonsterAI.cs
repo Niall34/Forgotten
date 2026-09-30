@@ -44,7 +44,7 @@ public class MonsterAI : MonoBehaviourPun
 
     [Header("Attack")]
     public float attackRange = 2f; // how close to the target before it attacks instead of continuing to chase
-    public int attackDamage = 50;
+    public int attackDamage = 10;
     public float attackCooldown = 1.5f;
     private float lastAttackTime = -999f;
     public float attackAnimationDuration = 1.2f; // how long to let the attack animation play before vanishing
@@ -287,7 +287,7 @@ public class MonsterAI : MonoBehaviourPun
         }
         else
         {
-            MonsterSpawnPoint[] spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
+            MonsterSpawnPoint[] spawnPoints = FindObjectsByType<MonsterSpawnPoint>();
             if (spawnPoints.Length == 0)
             {
                 return;
@@ -470,7 +470,7 @@ public class MonsterAI : MonoBehaviourPun
 
     private Vector3 GetRandomSpawnPointPosition() // picks a random MonsterSpawnPoint's position, shared by Relocate() and the random despawn/respawn
     {
-        MonsterSpawnPoint[] spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
+        MonsterSpawnPoint[] spawnPoints = FindObjectsByType<MonsterSpawnPoint>();
         if (spawnPoints.Length == 0)
         {
             return transform.position; // nowhere to go, just stay put

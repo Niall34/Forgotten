@@ -25,7 +25,7 @@ public class GameplaySession : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
 
-        PlayerSpawnPoint[] spawnPoints = FindObjectsOfType<PlayerSpawnPoint>();
+        PlayerSpawnPoint[] spawnPoints = FindObjectsByType<PlayerSpawnPoint>();
 
         if (spawnPoints.Length > 0)
         {
@@ -43,7 +43,7 @@ public class GameplaySession : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
 
-        MonsterSpawnPoint[] spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
+        MonsterSpawnPoint[] spawnPoints = FindObjectsByType<MonsterSpawnPoint>();
 
         if (spawnPoints.Length > 0)
         {
