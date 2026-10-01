@@ -57,9 +57,14 @@ public class LobbyUI : MonoBehaviour
     [Header("Game Loading Panel")]
     public GameObject gameLoadingPanel; // shown while the actual gameplay scene loads in
 
+    [Header("Sounds")]
+    public AudioClip buttonClickClip; // plays for every button on this canvas
+    public AudioClip matchStartClip; // plays for everyone in the lobby when the host starts, and for solo when play is pressed
+
     private static LobbyUI current; // this object survives scene loads, so coming back to the lobby scene would leave two of them without this
 
     private Canvas canvas;
+    private AudioSource uiSource;
     private NetworkManager net;
     private ForgottenSettingsMenu settingsMenu;
     private string storedNickname = "";
@@ -77,8 +82,8 @@ public class LobbyUI : MonoBehaviour
     private int lastSeenErrorVersion = 0;
     private int lastSeenPlayerListVersion = -1;
     private bool handledMatchStarting = false;
-    private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene 
- 
+    private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene - stops
+    // CheckForMatchStarting from re-showing the cover if MatchStarting only arrives after we're already there (it's a separate network round-trip from the scene load itself, so it can genuinely show up late)
 
     private void Awake() // wires up every button, loads the saved name, and shows the right starting panel
     {
@@ -112,6 +117,14 @@ public class LobbyUI : MonoBehaviour
         guestLeaveButton.onClick.AddListener(OnLeaveLobbyClicked);
         startButton.onClick.AddListener(OnStartClicked);
         hostLeaveButton.onClick.AddListener(OnLeaveLobbyClicked);
+
+        uiSource = gameObject.AddComponent<AudioSource>();
+        uiSource.playOnAwake = false;
+        uiSource.spatialBlend = 0f;
+        foreach (Button button in GetComponentsInChildren<Button>(true))
+        {
+            button.onClick.AddListener(PlayButtonClick);
+        }
 
         joinCodeField.characterLimit = 6;
         joinCodeField.onValueChanged.AddListener(HandleJoinCodeTyped);
@@ -283,6 +296,7 @@ public class LobbyUI : MonoBehaviour
         if (net.MatchStarting && handledMatchStarting == false)
         {
             handledMatchStarting = true;
+            PlayUiSound(matchStartClip); // runs on every client in the lobby when the host starts, so everyone hears it
             if (hostedCodeText != null)
             {
                 hostedCodeText.text = ""; // the code shows on the pause menu once the match is going
@@ -300,7 +314,7 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    private void HandleJoinCodeTyped(string typedValue) // forces the join code field to stay uppercase as you type
+    private void HandleJoinCodeTyped(string typedValue) // forces the join-code field to stay uppercase as you type
     {
         string upperCaseValue = typedValue.ToUpper();
         if (upperCaseValue != typedValue)
@@ -336,8 +350,10 @@ public class LobbyUI : MonoBehaviour
     {
         wantsToHostAfterConnecting = false;
         codeToJoinAfterConnecting = "";
+        PlayUiSound(matchStartClip); // solo never goes through MatchStarting, so this is where its start sound comes from
 
-        // show the cover right away whether player has already connected or still need to connect first, don't want a gap where nothing's covering the screen while that happens
+        // show the cover right away whether we're already connected or still need to connect first, we don't
+        // want a gap where nothing's covering the screen while that happens
         settingsMenu.HideImmediately();
         settingsMenu.StopLobbyMusic();
         ShowPanel(null);
@@ -443,6 +459,19 @@ public class LobbyUI : MonoBehaviour
         else
         {
             readyButtonLabel.text = "READY UP";
+        }
+    }
+
+    private void PlayButtonClick()
+    {
+        PlayUiSound(buttonClickClip);
+    }
+
+    private void PlayUiSound(AudioClip clip)
+    {
+        if (clip != null)
+        {
+            uiSource.PlayOneShot(clip);
         }
     }
 

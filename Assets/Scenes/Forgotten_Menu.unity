@@ -16333,6 +16333,7 @@ MonoBehaviour:
   playButton: {fileID: 649948676}
   hostButton: {fileID: 360871637}
   joinOpenButton: {fileID: 699619298}
+  quitButton: {fileID: 681966072}
   joinCodeField: {fileID: 1377477724}
   joinConfirmButton: {fileID: 1050295971}
   joinCancelButton: {fileID: 1593816262}
@@ -16346,6 +16347,8 @@ MonoBehaviour:
   loadingPopup: {fileID: 515486905}
   loadingPopupText: {fileID: 1666869846}
   gameLoadingPanel: {fileID: 271112720}
+  buttonClickClip: {fileID: 8300000, guid: 86d4790ff6220364a9f71defd9eaa112, type: 3}
+  matchStartClip: {fileID: 0}
 --- !u!43 &1107460570
 Mesh:
   m_ObjectHideFlags: 0

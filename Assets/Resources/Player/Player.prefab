@@ -152,6 +152,38 @@ MonoBehaviour:
   torchLightAim: {fileID: 3378953369605111060}
   torchHeight: 1.7
   health: {fileID: 5290357404427389631}
+  walkStepClips:
+  - {fileID: 8300000, guid: c9c4335209593f646b1d2d8f1465f7be, type: 3}
+  - {fileID: 8300000, guid: 9ae7c3d60f6fb3b45abebe8fdc831fac, type: 3}
+  - {fileID: 8300000, guid: a67715f73f72b164eba6f2c4f59cfee5, type: 3}
+  - {fileID: 8300000, guid: 15ff437831d076148934ab5c5f204ac4, type: 3}
+  - {fileID: 8300000, guid: 620cc173734a77040a02edea8046c28d, type: 3}
+  - {fileID: 8300000, guid: 53fc64ba926031140a94268f925b3c6d, type: 3}
+  - {fileID: 8300000, guid: 5bd5b76976c31714f9a33bde9ef6561a, type: 3}
+  runStepClips:
+  - {fileID: 8300000, guid: c9c4335209593f646b1d2d8f1465f7be, type: 3}
+  - {fileID: 8300000, guid: 9ae7c3d60f6fb3b45abebe8fdc831fac, type: 3}
+  - {fileID: 8300000, guid: a67715f73f72b164eba6f2c4f59cfee5, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  flashlightOnClip: {fileID: 8300000, guid: 7be46a8bb5c795844ac0e469df8106d8, type: 3}
+  flashlightOffClip: {fileID: 8300000, guid: bc2895f5f5114834da6f5a28afd9ac40, type: 3}
+  damageClip: {fileID: 8300000, guid: d8bdd26f4c009aa4e906b883afff1271, type: 3}
+  crouchBreathingClip: {fileID: 8300000, guid: 2a290eaa85bb6504a844fcf8808b18e5, type: 3}
+  buttonClickClip: {fileID: 8300000, guid: 86d4790ff6220364a9f71defd9eaa112, type: 3}
+  walkStepInterval: 0.55
+  runStepInterval: 0.33
+  walkStepVolume: 0.5
+  runStepVolume: 1
+  runPitchMultiplier: 1.15
+  crouchBreathingVolume: 0.08
+  stepSoundRange: 24
+  damageSoundRange: 7
+  flashlightSoundRange: 8
+  breathingSoundRange: 3
   remoteLerpSpeed: 12
 --- !u!95 &209546359802999642
 Animator:

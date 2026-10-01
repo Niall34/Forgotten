@@ -67,11 +67,33 @@ public class MonsterAI : MonoBehaviourPun
     private float searchTimer = 0f;
     private MonsterState state = MonsterState.Patrol;
 
+    [Header("Sounds")]
+    public AudioClip attackClip;
+    public AudioClip spawnClip;
+    public AudioClip despawnClip;
+    public float soundRange = 30f; // volume fades evenly to silent out to here, so you can tell roughly how far away the monster is
+    private AudioSource soundSource;
+
+    public AudioClip[] stepClips; // the same clips are used for walking and running, running just plays them faster
+    public float walkStepInterval = 0.8f; // seconds between steps
+    public float runStepInterval = 0.4f;
+    public float stepVolume = 0.8f;
+    public float runPitchMultiplier = 1.3f; // how much faster (and higher) the step sound plays while it's running
+    private AudioSource stepSource; // separate from soundSource, since changing the pitch on a source changes everything already playing on it
+    private Vector3 lastPosition;
+    private float smoothedSpeed = 0f;
+    private float stepTimer = 0f;
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
         monsterRenderers = GetComponentsInChildren<Renderer>();
+
+        // 3D and sits on the monster, so every client hears it from wherever the monster actually is
+        soundSource = MakeSoundSource();
+        stepSource = MakeSoundSource();
+        lastPosition = transform.position;
         agent.stoppingDistance = attackRange * 0.9f; // naturally slows down as it approaches attack range, instead of pathing all the way onto the player before the code catches up
     }
 
@@ -164,9 +186,80 @@ public class MonsterAI : MonoBehaviourPun
         isDespawned = false;
     }
 
+    private AudioSource MakeSoundSource() // 3D source on the monster, volume fades evenly to silent at soundRange
+    {
+        AudioSource source = gameObject.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.spatialBlend = 1f;
+        source.rolloffMode = AudioRolloffMode.Linear;
+        source.minDistance = 3f;
+        source.maxDistance = soundRange;
+        source.dopplerLevel = 0f;
+        return source;
+    }
+
+    private void LateUpdate() // unlike Update this runs on every client, so everyone hears the footsteps
+    {
+        UpdateStepSounds();
+    }
+
+    private void UpdateStepSounds() // only the master knows the monster's state, so this works out how fast it's actually moving from its position each frame, which works the same on everyone
+    {
+        float deltaTime = Time.deltaTime;
+        if (deltaTime <= 0f)
+        {
+            return;
+        }
+
+        float rawSpeed = Vector3.Distance(transform.position, lastPosition) / deltaTime;
+        lastPosition = transform.position;
+
+        if (rawSpeed > chaseSpeed * 2f)
+        {
+            rawSpeed = 0f; // way too fast to be walking, it just teleported somewhere, not worth a footstep
+        }
+
+        smoothedSpeed = Mathf.Lerp(smoothedSpeed, rawSpeed, 10f * deltaTime);
+
+        bool isVisible = monsterRenderers.Length > 0 && monsterRenderers[0].enabled;
+        bool isMoving = isVisible && smoothedSpeed > 0.3f;
+        if (isMoving == false)
+        {
+            stepTimer = 0f; // so the first step lands right as it starts moving
+            return;
+        }
+
+        // running whenever it's faster than halfway between patrol and chase speed, which is when the run animation is playing
+        bool isRunning = smoothedSpeed > (patrolSpeed + chaseSpeed) * 0.5f;
+
+        stepTimer -= deltaTime;
+        if (stepTimer > 0f)
+        {
+            return;
+        }
+
+        stepTimer = isRunning ? runStepInterval : walkStepInterval;
+        if (stepClips == null || stepClips.Length == 0)
+        {
+            return;
+        }
+
+        stepSource.pitch = Random.Range(0.94f, 1.06f) * (isRunning ? runPitchMultiplier : 1f);
+        stepSource.PlayOneShot(stepClips[Random.Range(0, stepClips.Length)], stepVolume);
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (clip != null)
+        {
+            soundSource.PlayOneShot(clip);
+        }
+    }
+
     [PunRPC]
     private void SetVisibleRPC(bool visible) // runs on every client so the monster actually disappears/reappears for everyone, not just the master client
     {
+        PlaySound(visible ? spawnClip : despawnClip);
         foreach (Renderer monsterRenderer in monsterRenderers)
         {
             monsterRenderer.enabled = visible;
@@ -381,6 +474,7 @@ public class MonsterAI : MonoBehaviourPun
     [PunRPC]
     private void PlayAttackRPC() // runs on every client so the attack animation actually plays for everyone watching, not just the master client
     {
+        PlaySound(attackClip);
         if (animator != null)
         {
             animator.SetTrigger("Attack");

@@ -45,6 +45,35 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
     [SerializeField] private PlayerHealthStateMachine health;
 
+    [Header("Sounds")]
+    [UnityEngine.Serialization.FormerlySerializedAs("walkStepClips")]
+    public AudioClip[] stepClips; // the one footstep sound for walking and sprinting, one is picked at random each step
+    public AudioClip flashlightOnClip;
+    public AudioClip flashlightOffClip;
+    public AudioClip damageClip;
+    public AudioClip crouchBreathingClip; // loops while crouched and not moving, only just audible
+    public AudioClip buttonClickClip; // plays for the touch buttons, only you hear it
+    [UnityEngine.Serialization.FormerlySerializedAs("walkStepInterval")]
+    public float stepInterval = 0.55f; // seconds between steps
+    [UnityEngine.Serialization.FormerlySerializedAs("runStepInterval")]
+    public float sprintStepInterval = 0.33f; // shorter while the sprint animation is playing, so the steps come faster
+    [UnityEngine.Serialization.FormerlySerializedAs("walkStepVolume")]
+    public float stepVolume = 0.8f;
+    [UnityEngine.Serialization.FormerlySerializedAs("runPitchMultiplier")]
+    public float sprintPitchMultiplier = 1.15f; // each step also plays a bit faster while sprinting (the pitch rises with the speed)
+    public float crouchBreathingVolume = 0.08f; // super quiet, you should only just be able to hear it
+    public float stepSoundRange = 24f; // all of these fade evenly to silent at their range, so you can tell roughly how far away someone is
+    public float damageSoundRange = 7f; // only heard from very close
+    public float flashlightSoundRange = 8f;
+    public float breathingSoundRange = 3f; // you'd have to be right next to someone to hear it
+
+    private AudioSource stepSource;
+    private AudioSource damageSource;
+    private AudioSource flashlightSource;
+    private AudioSource crouchBreathingSource;
+    private AudioSource uiSource; // plain 2D, for button clicks
+    private float stepTimer = 0f;
+
     // every spawned player adds itself here, so anything needing every visible player (like a minimap) can find them
     private static List<PlayerController> allPlayers = new List<PlayerController>();
     public static List<PlayerController> All
@@ -126,6 +155,12 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
         currentCameraHeight = cameraOffset.y;
         currentForwardOffset = standingForwardOffset;
+
+        // built here so every client's copy of this player has them, that's how teammates are heard from where they actually are
+        stepSource = MakeSoundSource("Step Sound", stepSoundRange, false, null);
+        damageSource = MakeSoundSource("Damage Sound", damageSoundRange, false, null);
+        flashlightSource = MakeSoundSource("Flashlight Sound", flashlightSoundRange, false, null);
+        crouchBreathingSource = MakeSoundSource("Crouch Breathing Sound", breathingSoundRange, true, crouchBreathingClip);
     }
 
     private void OnEnable() // adds this player to the shared all list
@@ -309,6 +344,91 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         }
 
         ApplyTorchAim(); // points the actual light at wherever the camera's aiming, same pivot idea as the camera itself
+        UpdatePlayerSounds(); // footsteps and breathing, for every copy of this player
+    }
+
+    private AudioSource MakeSoundSource(string sourceName, float maxDistance, bool loop, AudioClip clip) // a 3D source parked at this player's head, volume drops evenly until it's silent at maxDistance
+    {
+        GameObject sourceObject = new GameObject(sourceName);
+        sourceObject.transform.SetParent(transform, false);
+        sourceObject.transform.localPosition = Vector3.up * cameraOffset.y;
+
+        AudioSource source = sourceObject.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.spatialBlend = 1f;
+        source.rolloffMode = AudioRolloffMode.Linear;
+        source.minDistance = 1f;
+        source.maxDistance = maxDistance;
+        source.dopplerLevel = 0f;
+        source.loop = loop;
+        source.clip = clip;
+        source.volume = loop ? 0f : 1f; // loops start silent and fade in when they're needed
+        return source;
+    }
+
+    private void PlayClip(AudioSource source, AudioClip clip, float volume, float pitchMultiplier = 1f) // one shot with a tiny random pitch change so repeats don't sound identical
+    {
+        if (source == null || clip == null)
+        {
+            return;
+        }
+
+        source.pitch = Random.Range(0.94f, 1.06f) * pitchMultiplier;
+        source.PlayOneShot(clip, volume);
+    }
+
+    private void PlayButtonClick()
+    {
+        PlayClip(uiSource, buttonClickClip, 1f);
+    }
+
+    private void UpdatePlayerSounds() // reads values that are already synced to every client (moving, sprinting, crouching) so it works the same for your player and everyone else's
+    {
+        bool isDead = health != null && health.IsDead;
+
+        // the same check the animator uses to move into the Sprint tier, the speed param jumps to 1 for sprinting while walking is capped at 0.85
+        bool sprintAnimationPlaying = animatorSpeedParam > 0.9f;
+
+        // crouch walking makes no sound, same as it makes no noise for the monster
+        bool stepping = IsMoving && isCrouching == false && isDead == false;
+        if (stepping)
+        {
+            stepTimer -= Time.deltaTime;
+            if (stepTimer <= 0f)
+            {
+                stepTimer = sprintAnimationPlaying ? sprintStepInterval : stepInterval;
+                if (stepClips != null && stepClips.Length > 0)
+                {
+                    PlayClip(stepSource, stepClips[Random.Range(0, stepClips.Length)], stepVolume, sprintAnimationPlaying ? sprintPitchMultiplier : 1f);
+                }
+            }
+        }
+        else
+        {
+            stepTimer = 0f; // so the first step lands right as they start moving
+        }
+
+        bool crouchedAndStill = isCrouching && IsMoving == false;
+        FadeLoop(crouchBreathingSource, crouchBreathingVolume, crouchedAndStill && isDead == false);
+    }
+
+    private void FadeLoop(AudioSource source, float volume, bool shouldPlay) // fades a looping source in or out so it doesn't pop, and only keeps it running while it's audible
+    {
+        if (source == null || source.clip == null)
+        {
+            return;
+        }
+
+        source.volume = Mathf.MoveTowards(source.volume, shouldPlay ? volume : 0f, 3f * Time.deltaTime);
+
+        if (source.volume > 0f && source.isPlaying == false)
+        {
+            source.Play();
+        }
+        else if (source.volume <= 0f && source.isPlaying)
+        {
+            source.Stop();
+        }
     }
 
     private void ApplyTorchAim() // points the actual Torch Light wherever the camera's aiming, the visible torch model still sticks to the head bone so only the light moves
@@ -415,6 +535,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     private void SetFlashlightState(bool isOn) // runs on every client, turns the flashlight on/off
     {
         isFlashlightOn = isOn;
+        PlayClip(flashlightSource, isOn ? flashlightOnClip : flashlightOffClip, 1f);
 
         if (flashlight != null)
         {
@@ -427,6 +548,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (health == null || health.IsDead) return;
         health.CurrentHealth -= amount;
+        PlayClip(damageSource, damageClip, 1f); // TakeDamage runs on every client, so everyone close enough hears it
     }
 
     private Vector3 HandleMove() // reads WASD or the joystick
@@ -492,6 +614,15 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
         // flashlight reference is already grabbed in Awake() for every client, the RPC that toggles it still has to live here on PlayerController though, since Photon RPCs can't target child components directly
         WireUpButton(canvasInstance, "FlashlightButton", ToggleFlashlight);
+
+        uiSource = gameObject.AddComponent<AudioSource>();
+        uiSource.playOnAwake = false;
+        uiSource.spatialBlend = 0f;
+        foreach (Button button in canvasInstance.GetComponentsInChildren<Button>(true))
+        {
+            if (button.name == "FlashlightButton") continue; // the flashlight already clicks on its own
+            button.onClick.AddListener(PlayButtonClick);
+        }
     }
 
     // finds a button by name and wires it to a method in code, since the canvas is only created at runtime
