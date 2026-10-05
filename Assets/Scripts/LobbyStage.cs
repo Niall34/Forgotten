@@ -1,7 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 
-// controls the lobby scene - shows a local-only preview character before joining a room
+// this controls the lobby scene which controls and shows a local-only preview character before anyone has hosted or joined
 // and spawns the real networked character once the player is in a room
 public class LobbyStage : MonoBehaviour
 {
@@ -13,14 +13,13 @@ public class LobbyStage : MonoBehaviour
     private bool hasSpawnedReal = false;
     private GameObject previewInstance;
     private bool wasInRoom = false;
-    private string myDisplayName = ""; // saved from SpawnPreview, used later by SpawnLocalCharacter
 
     private void Start() // grabs the network manager
     {
         net = NetworkManager.Bootstrap();
     }
 
-    private void Update() // checks if we just joined a room, and swaps the preview for the real character if so
+    private void Update() // watches for joining a room, to swap the preview for the real character
     {
         bool isInRoomNow = net.InRoom;
         if (isInRoomNow && wasInRoom == false)
@@ -30,11 +29,9 @@ public class LobbyStage : MonoBehaviour
         wasInRoom = isInRoomNow;
     }
 
-    // spawns the local-only preview character shown before any room exists
+    // local only preview character which is shown before any room exists
     public void SpawnPreview(string displayName)
     {
-        myDisplayName = displayName; // saved for SpawnLocalCharacter to use later
-
         if (previewInstance != null)
         {
             // just update its label instead of making a duplicate
@@ -49,7 +46,11 @@ public class LobbyStage : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
 
-        LobbySpawnPoint[] spawnPoints = FindObjectsByType<LobbySpawnPoint>();
+<<<<<<< Updated upstream
+        LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
+=======
+        LobbySpawnPoint[] spawnPoints = GetSortedSpawnPoints();
+>>>>>>> Stashed changes
         if (spawnPoints.Length > 0)
         {
             Transform firstPoint = spawnPoints[0].transform;
@@ -75,11 +76,11 @@ public class LobbyStage : MonoBehaviour
         }
     }
 
-    // real networked character, spawned only after actually joining a room
+    // real networked character which is spawned only after actually joining a room
 
-    private void HandleJustJoinedRoom() // spawns the real character the first time we join a room
+    private void HandleJustJoinedRoom()
     {
-        // solo sessions skip this and go straight to gameplay
+        // solo sessions skip this scene's staging entirely and go straight to gameplay
 
         if (hasSpawnedReal || net.IsSolo)
         {
@@ -91,16 +92,46 @@ public class LobbyStage : MonoBehaviour
         SpawnLocalCharacter();
     }
 
+    private LobbySpawnPoint[] GetSortedSpawnPoints() // FindObjectsByType hands them back in a different order each time, so they're sorted here to keep seat 0 on the same point every time
+    {
+        LobbySpawnPoint[] spawnPoints = FindObjectsByType<LobbySpawnPoint>();
+
+        System.Array.Sort(spawnPoints, (a, b) =>
+        {
+            int byName = string.CompareOrdinal(a.name, b.name);
+            if (byName != 0)
+            {
+                return byName;
+            }
+
+            // same name, so fall back on where they are, otherwise two matching names could still swap places
+            int byX = a.transform.position.x.CompareTo(b.transform.position.x);
+            if (byX != 0)
+            {
+                return byX;
+            }
+
+            return a.transform.position.z.CompareTo(b.transform.position.z);
+        });
+
+        return spawnPoints;
+    }
+
     private void SpawnLocalCharacter() // spawns the real character at a seat based on the player's actor number
     {
+<<<<<<< Updated upstream
+        // player numbers start at 1, so this gives every player a different spawn point and
+        // keeps the same player in the same seat if they rejoin - if you've got more players
+        // than spawn points placed this will throw, so make sure you've placed enough
+        LobbySpawnPoint[] spawnPoints = FindObjectsOfType<LobbySpawnPoint>();
+=======
         // actor numbers start at 1, so this gives each player a different spawn point
         // and keeps them in the same seat if they rejoin - needs enough spawn points placed or this will throw
-        LobbySpawnPoint[] spawnPoints = FindObjectsByType<LobbySpawnPoint>();
+        LobbySpawnPoint[] spawnPoints = GetSortedSpawnPoints();
+>>>>>>> Stashed changes
         int mySeat = PhotonNetwork.LocalPlayer.ActorNumber - 1;
         Transform chosenPoint = spawnPoints[mySeat].transform;
 
-        // sends the name as instantiation data so every client can read it right away - LobbyPreviewCharacter picks it up in its own Awake()
-        object[] instantiationData = new object[] { myDisplayName };
-        PhotonNetwork.Instantiate(characterPrefabName, chosenPoint.position, chosenPoint.rotation, 0, instantiationData);
+        PhotonNetwork.Instantiate(characterPrefabName, chosenPoint.position, chosenPoint.rotation);
     }
 }

@@ -6,7 +6,6 @@ using UI = ForgottenSettingsUI;
 /// <summary>Tabbed lobby settings with live previews and explicit save/discard behavior.</summary>
 public sealed class ForgottenSettingsMenu : MonoBehaviour
 {
-    private const string LobbyMusicResourcePath = "Forgotten/Audio/whispering_shadows";
     private readonly GameObject[] pages = new GameObject[4];
     private readonly Button[] tabs = new Button[4];
     private readonly Button[] qualityButtons = new Button[3];
@@ -37,7 +36,6 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         SetControls(saved = ForgottenGameSettings.Load());
         SelectPage(0);
         settingsPanel.SetActive(false);
-        InitializeLobbyMusic();
     }
 
     public void HideImmediately()
@@ -52,10 +50,9 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         settingsPanel.SetActive(false);
     }
 
-    public void StopLobbyMusic()
+    public void SetLobbyMusic(AudioSource source) // LobbyUI owns the lobby music now, it hands the source over so the music slider can still change its volume live
     {
-        if (lobbyMusic != null)
-            lobbyMusic.Stop();
+        lobbyMusic = source;
     }
 
     private void Update()
@@ -209,23 +206,6 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         scroll.content = (RectTransform)pages[index].transform;
         Canvas.ForceUpdateCanvases();
         scroll.verticalNormalizedPosition = 1f;
-    }
-
-    private void InitializeLobbyMusic()
-    {
-        AudioClip clip = Resources.Load<AudioClip>(LobbyMusicResourcePath);
-        if (clip == null)
-        {
-            Debug.LogWarning("Lobby music is missing from Resources/Forgotten/Audio/whispering_shadows.", this);
-            return;
-        }
-        lobbyMusic = gameObject.AddComponent<AudioSource>();
-        lobbyMusic.clip = clip;
-        lobbyMusic.loop = true;
-        lobbyMusic.playOnAwake = false;
-        lobbyMusic.spatialBlend = 0f;
-        lobbyMusic.volume = draft.MusicVolume;
-        lobbyMusic.Play();
     }
 
     private void PlayTestSound()
