@@ -49,7 +49,28 @@ public class LobbyUI : MonoBehaviour
     [Header("Shared")]
     public TextMeshProUGUI statusText;
 
+<<<<<<< Updated upstream
     private Canvas canvas;
+=======
+    [Header("Loading Popup")]
+    public GameObject loadingPopup; // full screen overlay with a raycast-blocking image behind the text that blocks inputs
+    public TextMeshProUGUI loadingPopupText;
+
+    [Header("Game Loading Panel")]
+    public GameObject gameLoadingPanel; // shown while the actual gameplay scene loads in
+
+    [Header("Sounds")]
+    public AudioClip buttonClickClip; // plays for every button on this canvas
+    public AudioClip matchStartClip; // plays for everyone in the lobby when the host starts, and for solo when play is pressed
+    [Range(0f, 1f)] public float matchStartVolume = 0.6f; // how loud the start sound is, lower it to make it quieter
+    public AudioClip lobbyMusicClip; // loops forever in the lobby until the player loads into a match
+
+    private static LobbyUI current; // this object survives scene loads, so coming back to the lobby scene would leave two of them without this
+
+    private Canvas canvas;
+    private AudioSource uiSource;
+    private AudioSource lobbyMusic;
+>>>>>>> Stashed changes
     private NetworkManager net;
     private string storedNickname = "";
 
@@ -76,6 +97,14 @@ public class LobbyUI : MonoBehaviour
 
         canvas = GetComponent<Canvas>();
         net = NetworkManager.Bootstrap();
+<<<<<<< Updated upstream
+=======
+        SceneManager.sceneLoaded += HandleGameplaySceneLoaded; // catches the moment the new scene's actually ready
+        settingsMenu = GetComponent<ForgottenSettingsMenu>();
+        if (settingsMenu == null) settingsMenu = gameObject.AddComponent<ForgottenSettingsMenu>();
+        settingsMenu.Initialize(mainLobbyPanel);
+        StartLobbyMusic();
+>>>>>>> Stashed changes
 
         continueButton.onClick.AddListener(OnNameContinueClicked);
         playButton.onClick.AddListener(OnPlayClicked);
@@ -179,7 +208,14 @@ public class LobbyUI : MonoBehaviour
         // solo games skip the lobby screens entirely and go straight to gameplay
         if (net.IsSolo)
         {
+<<<<<<< Updated upstream
             canvas.enabled = false;
+=======
+            settingsMenu.HideImmediately();
+            StopLobbyMusic();
+            ShowPanel(null); // hides every lobby panel without touching the canvas itself, so gameLoadingPanel can still show
+            ShowGameLoadingPanel();
+>>>>>>> Stashed changes
             return;
         }
 
@@ -246,8 +282,26 @@ public class LobbyUI : MonoBehaviour
         if (net.MatchStarting && handledMatchStarting == false)
         {
             handledMatchStarting = true;
+<<<<<<< Updated upstream
             SetStatus("Starting...");
             canvas.enabled = false;
+=======
+            PlayUiSound(matchStartClip, matchStartVolume); // runs on every client in the lobby when the host starts, so everyone hears it
+            if (hostedCodeText != null)
+            {
+                hostedCodeText.text = ""; // the code shows on the pause menu once the match is going
+            }
+            SetStatus("Starting...");
+            settingsMenu.HideImmediately();
+            StopLobbyMusic();
+
+            // MatchStarting can arrive a moment after the scene itself already finished loading, it's a separate network round-trip, not tied to the local scene swap. if that's already happened, showing the cover now would just leave it stuck on screen forever, since nothing's left to hide it a second time
+            if (hasEnteredGameplayScene == false)
+            {
+                ShowPanel(null);
+                ShowGameLoadingPanel();
+            }
+>>>>>>> Stashed changes
         }
     }
 
@@ -287,6 +341,17 @@ public class LobbyUI : MonoBehaviour
     {
         wantsToHostAfterConnecting = false;
         codeToJoinAfterConnecting = "";
+<<<<<<< Updated upstream
+=======
+        PlayUiSound(matchStartClip, matchStartVolume); // solo never goes through MatchStarting, so this is where its start sound comes from
+
+        // show the cover right away whether we're already connected or still need to connect first, we don't
+        // want a gap where nothing's covering the screen while that happens
+        settingsMenu.HideImmediately();
+        StopLobbyMusic();
+        ShowPanel(null);
+        ShowGameLoadingPanel();
+>>>>>>> Stashed changes
 
         if (net.InLobby)
         {
@@ -388,6 +453,64 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
+<<<<<<< Updated upstream
+=======
+    private void StartLobbyMusic() // starts the lobby music looping, it only ends when StopLobbyMusic is called as the player heads into a match
+    {
+        AudioClip musicClip = lobbyMusicClip;
+        if (musicClip == null)
+        {
+            musicClip = Resources.Load<AudioClip>("Forgotten/Audio/whispering_shadows"); // where the settings menu used to load it from, so it still works if the file's already there
+        }
+
+        if (musicClip == null)
+        {
+            Debug.LogWarning("No lobby music assigned, drag it into the Lobby Music Clip slot on LobbyUI", this);
+            return;
+        }
+
+        lobbyMusic = gameObject.AddComponent<AudioSource>();
+        lobbyMusic.clip = musicClip;
+        lobbyMusic.loop = true;
+        lobbyMusic.playOnAwake = false;
+        lobbyMusic.spatialBlend = 0f;
+        lobbyMusic.volume = ForgottenGameSettings.Load().MusicVolume; // the saved value from the settings menu's music slider
+        lobbyMusic.Play();
+
+        settingsMenu.SetLobbyMusic(lobbyMusic); // so that slider can still change the volume live while you're in settings
+    }
+
+    private void StopLobbyMusic()
+    {
+        if (lobbyMusic != null)
+        {
+            lobbyMusic.Stop();
+        }
+    }
+
+    private void PlayButtonClick()
+    {
+        PlayUiSound(buttonClickClip);
+    }
+
+    private void PlayUiSound(AudioClip clip, float volume = 1f)
+    {
+        if (clip != null)
+        {
+            uiSource.PlayOneShot(clip, volume);
+        }
+    }
+
+    private void OnQuitClicked() // closes the game, in the editor it stops play mode instead since Application.Quit() does nothing there
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+>>>>>>> Stashed changes
     private void OnStartClicked() // host-only, force-starts the match
     {
         SetStatus("Starting...");
