@@ -2,11 +2,11 @@ using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 
-// controls the whole 2D menu, entering your name, then hosting/joining/playing solo and
-// the ready up screens once you're in a room
+// controls the whole UI menus for the lobby screen
 
 public class LobbyUI : MonoBehaviour
 {
@@ -30,6 +30,7 @@ public class LobbyUI : MonoBehaviour
     public Button playButton;
     public Button hostButton;
     public Button joinOpenButton;
+    public Button quitButton; // drag your existing quit button in here
 
     [Header("Joining Lobby Panel")]
     public TMP_InputField joinCodeField;
@@ -49,9 +50,6 @@ public class LobbyUI : MonoBehaviour
     [Header("Shared")]
     public TextMeshProUGUI statusText;
 
-<<<<<<< Updated upstream
-    private Canvas canvas;
-=======
     [Header("Loading Popup")]
     public GameObject loadingPopup; // full screen overlay with a raycast-blocking image behind the text that blocks inputs
     public TextMeshProUGUI loadingPopupText;
@@ -70,46 +68,53 @@ public class LobbyUI : MonoBehaviour
     private Canvas canvas;
     private AudioSource uiSource;
     private AudioSource lobbyMusic;
->>>>>>> Stashed changes
     private NetworkManager net;
+    private ForgottenSettingsMenu settingsMenu;
     private string storedNickname = "";
 
-    // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes
+    // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes - this is a backup/safety net
     private bool wantsToHostAfterConnecting = false;
     private string codeToJoinAfterConnecting = "";
     private bool wantsToPlaySoloAfterConnecting = false;
 
     private bool localReady = false;
 
-    // values that are remembered checked against the network manager's current values every
-    // frame in "Update()" to detect when something has changed
+    // values that are remembered checked against the network manager's current values every frame in "Update()" to detect when something has changed
     private bool wasInLobby = false;
     private bool wasInRoom = false;
     private int lastSeenErrorVersion = 0;
     private int lastSeenPlayerListVersion = -1;
     private bool handledMatchStarting = false;
+    private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene - stops
+    // CheckForMatchStarting from re-showing the cover if MatchStarting only arrives after we're already there (it's a separate network round-trip from the scene load itself, so it can genuinely show up late)
 
     private void Awake() // wires up every button, loads the saved name, and shows the right starting panel
     {
+        if (current != null && current != this)
+        {
+            Destroy(current.gameObject); // the old one still points at the previous scene's LobbyStage, the fresh one takes over
+        }
+        current = this;
 
         EnsureEventSystem();
         DontDestroyOnLoad(gameObject);
 
         canvas = GetComponent<Canvas>();
         net = NetworkManager.Bootstrap();
-<<<<<<< Updated upstream
-=======
         SceneManager.sceneLoaded += HandleGameplaySceneLoaded; // catches the moment the new scene's actually ready
         settingsMenu = GetComponent<ForgottenSettingsMenu>();
         if (settingsMenu == null) settingsMenu = gameObject.AddComponent<ForgottenSettingsMenu>();
         settingsMenu.Initialize(mainLobbyPanel);
         StartLobbyMusic();
->>>>>>> Stashed changes
 
         continueButton.onClick.AddListener(OnNameContinueClicked);
         playButton.onClick.AddListener(OnPlayClicked);
         hostButton.onClick.AddListener(OnHostClicked);
         joinOpenButton.onClick.AddListener(OnJoinOpenClicked);
+        if (quitButton != null)
+        {
+            quitButton.onClick.AddListener(OnQuitClicked);
+        }
         joinConfirmButton.onClick.AddListener(OnJoinConfirmClicked);
         joinCancelButton.onClick.AddListener(OnJoinCancelClicked);
         readyButton.onClick.AddListener(OnReadyClicked);
@@ -117,8 +122,19 @@ public class LobbyUI : MonoBehaviour
         startButton.onClick.AddListener(OnStartClicked);
         hostLeaveButton.onClick.AddListener(OnLeaveLobbyClicked);
 
+        uiSource = gameObject.AddComponent<AudioSource>();
+        uiSource.playOnAwake = false;
+        uiSource.spatialBlend = 0f;
+        foreach (Button button in GetComponentsInChildren<Button>(true))
+        {
+            button.onClick.AddListener(PlayButtonClick);
+        }
+
         joinCodeField.characterLimit = 6;
         joinCodeField.onValueChanged.AddListener(HandleJoinCodeTyped);
+
+        HideLoadingPopup(); // just in case someone left it active in the editor by accident
+        HideGameLoadingPanel(); // same deal - starts hidden regardless of how it was left in the editor
 
         storedNickname = PlayerPrefs.GetString(NicknameKey, "");
         bool alreadyHaveName = storedNickname != "";
@@ -154,6 +170,7 @@ public class LobbyUI : MonoBehaviour
             wantsToHostAfterConnecting = false;
             codeToJoinAfterConnecting = "";
             wantsToPlaySoloAfterConnecting = false;
+            HideLoadingPopup(); // whatever we were waiting on just failed, no point leaving it up
             SetStatus(net.ErrorMessage);
         }
     }
@@ -205,23 +222,23 @@ public class LobbyUI : MonoBehaviour
 
     private void HandleJustJoinedRoom()
     {
+        HideLoadingPopup(); // whatever got us here (hosting or joining) is done now
+
         // solo games skip the lobby screens entirely and go straight to gameplay
         if (net.IsSolo)
         {
-<<<<<<< Updated upstream
-            canvas.enabled = false;
-=======
             settingsMenu.HideImmediately();
             StopLobbyMusic();
             ShowPanel(null); // hides every lobby panel without touching the canvas itself, so gameLoadingPanel can still show
             ShowGameLoadingPanel();
->>>>>>> Stashed changes
             return;
         }
 
         SetStatus("");
         localReady = false;
         canvas.enabled = true;
+        handledMatchStarting = false; // reset in case this isn't the first room we've been in this session
+        hasEnteredGameplayScene = false;
 
         if (net.IsMasterClient)
         {
@@ -242,6 +259,7 @@ public class LobbyUI : MonoBehaviour
 
     private void HandleJustLeftRoom() // goes back to the code-entry panel after leaving a room
     {
+        HideLoadingPopup();
         SetStatus("");
         canvas.enabled = true;
         ShowPanel(joiningLobbyPanel);
@@ -277,15 +295,11 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    private void CheckForMatchStarting() // hides the whole menu once the match starts
+    private void CheckForMatchStarting() // hides the lobby panels and covers the screen once the match starts
     {
         if (net.MatchStarting && handledMatchStarting == false)
         {
             handledMatchStarting = true;
-<<<<<<< Updated upstream
-            SetStatus("Starting...");
-            canvas.enabled = false;
-=======
             PlayUiSound(matchStartClip, matchStartVolume); // runs on every client in the lobby when the host starts, so everyone hears it
             if (hostedCodeText != null)
             {
@@ -301,7 +315,6 @@ public class LobbyUI : MonoBehaviour
                 ShowPanel(null);
                 ShowGameLoadingPanel();
             }
->>>>>>> Stashed changes
         }
     }
 
@@ -341,8 +354,6 @@ public class LobbyUI : MonoBehaviour
     {
         wantsToHostAfterConnecting = false;
         codeToJoinAfterConnecting = "";
-<<<<<<< Updated upstream
-=======
         PlayUiSound(matchStartClip, matchStartVolume); // solo never goes through MatchStarting, so this is where its start sound comes from
 
         // show the cover right away whether we're already connected or still need to connect first, we don't
@@ -351,7 +362,6 @@ public class LobbyUI : MonoBehaviour
         StopLobbyMusic();
         ShowPanel(null);
         ShowGameLoadingPanel();
->>>>>>> Stashed changes
 
         if (net.InLobby)
         {
@@ -373,6 +383,7 @@ public class LobbyUI : MonoBehaviour
 
     public void OnHostClicked() // connects then hosts a room
     {
+        ShowLoadingPopup(); // pops up right away, whether we're already connected or still need to connect first
 
         codeToJoinAfterConnecting = "";
         wantsToPlaySoloAfterConnecting = false;
@@ -400,7 +411,7 @@ public class LobbyUI : MonoBehaviour
         SetStatus("Creating room...");
     }
 
-    private void OnJoinOpenClicked() // opens the join-code entry panel
+    private void OnJoinOpenClicked() // opens the join code entry panel
     {
         joinCodeField.text = "";
         SetStatus("");
@@ -418,6 +429,8 @@ public class LobbyUI : MonoBehaviour
             SetStatus("Enter a code first");
             return;
         }
+
+        ShowLoadingPopup(); // only pops up once we know there's an actual code to try, not on an empty submit
 
         if (net.InLobby)
         {
@@ -453,8 +466,6 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-<<<<<<< Updated upstream
-=======
     private void StartLobbyMusic() // starts the lobby music looping, it only ends when StopLobbyMusic is called as the player heads into a match
     {
         AudioClip musicClip = lobbyMusicClip;
@@ -510,22 +521,25 @@ public class LobbyUI : MonoBehaviour
 #endif
     }
 
->>>>>>> Stashed changes
     private void OnStartClicked() // host-only, force-starts the match
     {
         SetStatus("Starting...");
+        ShowPanel(null); // show the loading cover right away rather than waiting for MatchStarting to flip
+        ShowGameLoadingPanel();
         net.ForceStartGame();
     }
 
     private void OnLeaveLobbyClicked()
     {
         // same button handler for both the guest and host "join another lobby" buttons
+        ShowLoadingPopup();
         SetStatus("Leaving...");
         net.LeaveRoom();
     }
 
     private void ShowPanel(GameObject panelToShow) // activates one panel and hides the rest
     {
+        settingsMenu?.HideImmediately();
         namePromptPanel.SetActive(panelToShow == namePromptPanel);
         mainLobbyPanel.SetActive(panelToShow == mainLobbyPanel);
         joiningLobbyPanel.SetActive(panelToShow == joiningLobbyPanel);
@@ -541,6 +555,49 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
+    private void ShowLoadingPopup() // pops up the moment a button's tapped, so it's obvious the input actually registered and stops any further input
+    {
+        if (loadingPopup != null)
+        {
+            loadingPopup.SetActive(true);
+        }
+
+        if (loadingPopupText != null)
+        {
+            loadingPopupText.text = "Loading...";
+        }
+    }
+
+    private void HideLoadingPopup()
+    {
+        if (loadingPopup != null)
+        {
+            loadingPopup.SetActive(false);
+        }
+    }
+
+    private void HandleGameplaySceneLoaded(Scene loadedScene, LoadSceneMode mode) // fires for any scene load
+    {
+        hasEnteredGameplayScene = true;
+        HideGameLoadingPanel();
+    }
+
+    private void ShowGameLoadingPanel()
+    {
+        if (gameLoadingPanel != null)
+        {
+            gameLoadingPanel.SetActive(true);
+        }
+    }
+
+    private void HideGameLoadingPanel()
+    {
+        if (gameLoadingPanel != null)
+        {
+            gameLoadingPanel.SetActive(false);
+        }
+    }
+
     private void EnsureEventSystem() // makes sure exactly one EventSystem exists in the scene
     {
         EventSystem existing = FindAnyObjectByType<EventSystem>();
@@ -553,6 +610,11 @@ public class LobbyUI : MonoBehaviour
         eventSystemObject.AddComponent<EventSystem>();
         eventSystemObject.AddComponent<StandaloneInputModule>();
         DontDestroyOnLoad(eventSystemObject);
+    }
+
+    private void OnDestroy() // tidy up the subscription from Awake, this object should live for the whole game, but just in case
+    {
+        SceneManager.sceneLoaded -= HandleGameplaySceneLoaded;
     }
 
 #if UNITY_EDITOR

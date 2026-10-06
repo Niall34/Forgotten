@@ -3,19 +3,19 @@ using Photon.Pun;
 using UnityEngine;
 using UnityEngine.AI;
 
-// controls the monster (only the master client actually runs this logic and moves it) everyone else just watches it move through the normal photon position sync (added a PhotonTransformView to the prefab for that, same as the player)
+// controls the monster (only the master client actually runs this logic and moves it) everyone else just watches it move through the normal photon position sync (added a photontransformview to the prefab for that, same as the player)
 [RequireComponent(typeof(PhotonView))]
 [RequireComponent(typeof(NavMeshAgent))]
 public class MonsterAI : MonoBehaviourPun
 {
     [Header("Detection")]
-    public float chaseRange = 50f; // sight range achieved while sprinting or with your flashlight on, with a clear line of sight, this is the ceiling, veryCloseRange below is the floor for a silent player
+    public float chaseRange = 50f; // sight range achieved while sprinting or with your flashlight on, with a clear line of sight, this is the ceiling, verycloserange below is the floor for a silent player
     public float giveUpRange = 80f; // how far away before the monster loses interest mid chase
     public float searchTime = 8f; // how long it searches the last known spot before giving up
-    public float flashlightDetectionBonus = 10f; // extra sight range on top of chaseRange while sprinting AND the player's flashlight is on
+    public float flashlightDetectionBonus = 10f; // extra sight range on top of chaserange while sprinting and the player's flashlight is on
 
     [Header("Stealth")]
-    public float veryCloseRange = 3f; // point-blank distance, a silent, dark, motionless player can only be spotted this close even with clear line of sight, and a moving player this close gets noticed no matter what else is going on
+    public float veryCloseRange = 3f; // point,blank distance, a silent, dark, motionless player can only be spotted this close even with clear line of sight, and a moving player this close gets noticed no matter what else is going on
     public float argoRange = 9f; // a sprinting player within this range pulls the monster's patrol wandering toward them
     public LayerMask sightBlockingLayers = ~0; // what actually blocks the monster's view (walls, crates, barrels etc) whatever's flagged solid on the maps geometry
     public float monsterEyeHeight = 1.9f; // roughly where the monster's own "eyes" are for line of sight checks
@@ -37,12 +37,12 @@ public class MonsterAI : MonoBehaviourPun
 
     [Header("Random Despawn")]
     public bool vanishOnlyAfterAttack = true; // when ticked it only vanishes after hitting a player, no random despawns and no teleporting away after losing one, untick it for the old behaviour
-    public float despawnCheckInterval = 15f; // how often, in seconds, it rolls the dice on vanishing (only while patrolling, never mid-chase)
+    public float despawnCheckInterval = 15f; // how often, in seconds, it rolls the dice on vanishing (only while patrolling, never mid,chase)
     [Range(0f, 1f)] public float despawnChance = 0.20f; // chance per check that it actually vanishes this time
     public float despawnHiddenDuration = 8f; // how long it stays gone before reappearing somewhere else
     public float attackRespawnDelay = 10f; // how long it stays gone after an attack before it reappears, the random despawn above keeps its own shorter time
 
-    private Renderer[] monsterRenderers; // hidden/shown together instead of disabling the whole GameObject, which would mess with the NavMeshAgent
+    private Renderer[] monsterRenderers; // hidden/shown together instead of disabling the whole gameobject, which would mess with the navmeshagent
     private bool isDespawned = false;
     private RaycastHit[] sightHits = new RaycastHit[16]; // reused every line of sight check so it isn't allocating a new array each time
     private float timeSinceSeenTarget = 0f;
@@ -53,11 +53,11 @@ public class MonsterAI : MonoBehaviourPun
     public int attackDamage = 10;
     public float attackCooldown = 1.5f;
     private float lastAttackTime = -999f;
-    public float attackAnimationDuration = 1.2f; // how long to let the attack animation play before vanishing (only used now if no clip with "attack" in its name is found on the Animator)
+    public float attackAnimationDuration = 1.2f; // how long to let the attack animation play before vanishing (only used now if no clip with "attack" in its name is found on the animator)
     public float attackVanishOffset = -2f; // nudges the vanish time earlier (negative) or later (positive) than the exact end of the attack clip
     public float attackHitDelay = 0.4f; // how far into the swing the hit actually lands, only then does it check the target's still in reach
-    public float attackHitLeeway = 1.5f; // extra distance past attackRange a player can be when the swing lands and still get hit, run further than that and the swing misses and it carries on chasing
-    public float detectionGraceAfterRespawn = 5f; // after reappearing (from an attack OR a random despawn), it can't re-detect anyone for this long to stop an instant re-attack loop
+    public float attackHitLeeway = 1.5f; // extra distance past attackrange a player can be when the swing lands and still get hit, run further than that and the swing misses and it carries on chasing
+    public float detectionGraceAfterRespawn = 5f; // after reappearing (from an attack or a random despawn), it can't re,detect anyone for this long to stop an instant re,attack loop
 
     private bool isAttacking = false;
     private float detectionGraceTimer = 0f;
@@ -70,7 +70,7 @@ public class MonsterAI : MonoBehaviourPun
     }
 
     private NavMeshAgent agent;
-    private Animator animator; // drives Idle/Walk/Run on the Monster's Animator Controller
+    private Animator animator; // drives idle/walk/run on the monster's animator controller
     private PlayerController currentTarget;
     private Vector3 lastKnownPosition;
     private float searchTimer = 0f;
@@ -88,7 +88,7 @@ public class MonsterAI : MonoBehaviourPun
     public float runStepInterval = 0.4f;
     public float stepVolume = 0.8f;
     public float runPitchMultiplier = 1.3f; // how much faster (and higher) the step sound plays while it's running
-    private AudioSource stepSource; // separate from soundSource, since changing the pitch on a source changes everything already playing on it
+    private AudioSource stepSource; // separate from soundsource, since changing the pitch on a source changes everything already playing on it
     private Vector3 lastPosition;
     private float smoothedSpeed = 0f;
     private float stepTimer = 0f;
@@ -99,14 +99,14 @@ public class MonsterAI : MonoBehaviourPun
         animator = GetComponent<Animator>();
         monsterRenderers = GetComponentsInChildren<Renderer>();
 
-        // 3D and sits on the monster, so every client hears it from wherever the monster actually is
+        // 3d and sits on the monster, so every client hears it from wherever the monster actually is
         soundSource = MakeSoundSource();
         stepSource = MakeSoundSource();
         lastPosition = transform.position;
         agent.stoppingDistance = attackRange * 0.9f; // naturally slows down as it approaches attack range, instead of pathing all the way onto the player before the code catches up
     }
 
-    private void Start() // snap onto the NavMesh right away in case the spawn point is slightly off the baked surface
+    private void Start() // snap onto the navmesh right away in case the spawn point is slightly off the baked surface
     {
         if (agent.isOnNavMesh == false)
         {
@@ -127,13 +127,13 @@ public class MonsterAI : MonoBehaviourPun
             return;
         }
 
-        // if monster isn't sitting on a navmesh yet (bad spawn position, or navmesh not baked over that spot), it bails out for this frame rather than throwing on remainingDistance/SetDestination
+        // if monster isn't sitting on a navmesh yet (bad spawn position, or navmesh not baked over that spot), it bails out for this frame rather than throwing on remainingdistance/setdestination
         if (agent.isOnNavMesh == false)
         {
             return;
         }
 
-        // frozen while hidden or mid-attack, the relevant coroutine handles bringing it back, nothing else should run in the meantime
+        // frozen while hidden or mid,attack, the relevant coroutine handles bringing it back, nothing else should run in the meantime
         if (isDespawned || isAttacking)
         {
             return;
@@ -190,7 +190,7 @@ public class MonsterAI : MonoBehaviourPun
         yield return new WaitForSeconds(hiddenDuration);
 
         Vector3 respawnPosition = GetRandomSpawnPointPosition();
-        if (respawnPosition != transform.position) // GetRandomSpawnPointPosition returns transform.position itself if there's nowhere to go
+        if (respawnPosition != transform.position) // getrandomspawnpointposition returns transform.position itself if there's nowhere to go
         {
             agent.Warp(respawnPosition);
         }
@@ -201,7 +201,7 @@ public class MonsterAI : MonoBehaviourPun
         detectionGraceTimer = detectionGraceAfterRespawn; // reappearing shouldn't mean instantly spotting someone again, this is the timer that was meant to stop that
     }
 
-    private AudioSource MakeSoundSource() // 3D source on the monster, volume fades evenly to silent at soundRange
+    private AudioSource MakeSoundSource() // 3d source on the monster, volume fades evenly to silent at soundrange
     {
         AudioSource source = gameObject.AddComponent<AudioSource>();
         source.playOnAwake = false;
@@ -213,7 +213,7 @@ public class MonsterAI : MonoBehaviourPun
         return source;
     }
 
-    private void LateUpdate() // unlike Update this runs on every client, so everyone hears the footsteps
+    private void LateUpdate() // unlike update this runs on every client, so everyone hears the footsteps
     {
         UpdateStepSounds();
     }
@@ -281,7 +281,7 @@ public class MonsterAI : MonoBehaviourPun
         }
     }
 
-    private void UpdateAnimator() // feeds the current movement + chase state into the Animator every frame
+    private void UpdateAnimator() // feeds the current movement + chase state into the animator every frame
     {
         if (animator == null)
         {
@@ -327,7 +327,7 @@ public class MonsterAI : MonoBehaviourPun
         if (detected != null)
         {
             currentTarget = detected;
-            isPausedAtWaypoint = false; // drop whatever pause it was in mid-way through as chasing takes priority
+            isPausedAtWaypoint = false; // drop whatever pause it was in mid,way through as chasing takes priority
             state = MonsterState.Chase;
             timeSinceSeenTarget = 0f;
         }
@@ -418,7 +418,7 @@ public class MonsterAI : MonoBehaviourPun
         for (int attempt = 0; attempt < WanderSampleAttempts; attempt++)
         {
             Vector3 randomOffset = Random.insideUnitSphere * wanderRadius;
-            randomOffset.y = 0f; // keep the sample flat, height gets handled by the NavMesh sample below
+            randomOffset.y = 0f; // keep the sample flat, height gets handled by the navmesh sample below
             Vector3 candidate = anchor + randomOffset;
 
             NavMeshHit hit;
@@ -462,7 +462,7 @@ public class MonsterAI : MonoBehaviourPun
         }
 
         // a solid object between them breaks the chase, it keeps heading for the last spot it saw them for a moment, then loses track and searches there
-        bool heardAtPointBlank = distance <= veryCloseRange && currentTarget.IsMoving; // same point blank override ShouldStartChasing uses, it can still hear someone moving right next to it
+        bool heardAtPointBlank = distance <= veryCloseRange && currentTarget.IsMoving; // same point blank override shouldstartchasing uses, it can still hear someone moving right next to it
         bool canSeeTarget = HasLineOfSightTo(currentTarget) || heardAtPointBlank;
         if (canSeeTarget)
         {
@@ -488,13 +488,13 @@ public class MonsterAI : MonoBehaviourPun
     {
         isAttacking = true;
         agent.isStopped = true;
-        agent.velocity = Vector3.zero; // isStopped alone can still let it coast forward a bit on leftover momentum, this kills that immediately
+        agent.velocity = Vector3.zero; // isstopped alone can still let it coast forward a bit on leftover momentum, this kills that immediately
         agent.ResetPath(); // also drop the current path entirely so there's nothing left for it to resume
 
         if (animator != null)
         {
-            animator.SetFloat("Speed", 0f); // Update() skips UpdateAnimator() while isAttacking, so Speed would otherwise stay frozen at its last (likely running) value the whole time
-            animator.SetBool("IsChasing", false); // same goes for this, otherwise the Animator falls back into the run animation as soon as the attack clip ends
+            animator.SetFloat("Speed", 0f); // update() skips updateanimator() while isattacking, so speed would otherwise stay frozen at its last (likely running) value the whole time
+            animator.SetBool("IsChasing", false); // same goes for this, otherwise the animator falls back into the run animation as soon as the attack clip ends
         }
 
         photonView.RPC(nameof(PlayAttackRPC), RpcTarget.All);
@@ -524,7 +524,7 @@ public class MonsterAI : MonoBehaviourPun
         isAttacking = false;
     }
 
-    private float GetAttackAnimationLength() // looks for the attack clip on the Animator so it vanishes the moment that animation ends, falls back to attackAnimationDuration if it can't find one
+    private float GetAttackAnimationLength() // looks for the attack clip on the animator so it vanishes the moment that animation ends, falls back to attackanimationduration if it can't find one
     {
         if (animator == null || animator.runtimeAnimatorController == null)
         {
@@ -597,7 +597,7 @@ public class MonsterAI : MonoBehaviourPun
         }
     }
 
-    private PlayerController FindPlayerToChase() // loops every player and returns the closest one the monster can actually detect right now via ShouldStartChasing, not just the geometrically nearest player, since a nearer one might be successfully hidden while someone further away is standing out in the open
+    private PlayerController FindPlayerToChase() // loops every player and returns the closest one the monster can actually detect right now via shouldstartchasing, not just the geometrically nearest player, since a nearer one might be successfully hidden while someone further away is standing out in the open
     {
         PlayerController best = null;
         float bestDistance = 0f;
@@ -621,7 +621,7 @@ public class MonsterAI : MonoBehaviourPun
         return best;
     }
 
-    private PlayerController FindArgoTarget() // closest sprinting player within argoRange, used to bias patrol wandering toward them without actually committing to a chase, deliberately doesn't care about line of sight or the flashlight, sprinting nearby is loud enough on its own to catch the monster's attention
+    private PlayerController FindArgoTarget() // closest sprinting player within argorange, used to bias patrol wandering toward them without actually committing to a chase, deliberately doesn't care about line of sight or the flashlight, sprinting nearby is loud enough on its own to catch the monster's attention
     {
         PlayerController closest = null;
         float closestDistance = 0f;
@@ -646,14 +646,14 @@ public class MonsterAI : MonoBehaviourPun
         return closest;
     }
 
-    // this is just temporary until I write a script where it wonders and looks for the player and waits peridodically before spawning in again
+    // this is just temporary until i write a script where it wonders and looks for the player and waits peridodically before spawning in again
     private void Relocate() // teleports to a random monster spawn point after giving up a chase
     {
         Vector3 position = GetRandomSpawnPointPosition();
         agent.Warp(position); // teleport, not walk, since the chase already gave up
     }
 
-    private Vector3 GetRandomSpawnPointPosition() // picks a random MonsterSpawnPoint's position, shared by Relocate() and the random despawn/respawn
+    private Vector3 GetRandomSpawnPointPosition() // picks a random monsterspawnpoint's position, shared by relocate() and the random despawn/respawn
     {
         MonsterSpawnPoint[] spawnPoints = FindObjectsByType<MonsterSpawnPoint>();
         if (spawnPoints.Length == 0)

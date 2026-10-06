@@ -1317,6 +1317,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenuController
   pausePanel: {fileID: 8799180402122645289}
+  roomCodeText: {fileID: 0}
+  buttonClickClip: {fileID: 8300000, guid: 86d4790ff6220364a9f71defd9eaa112, type: 3}
 --- !u!1 &5291049741555740865
 GameObject:
   m_ObjectHideFlags: 0
@@ -2481,7 +2483,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6621216727324863835
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2551,7 +2553,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &4493213316911063467
 MonoBehaviour:
   m_ObjectHideFlags: 0
