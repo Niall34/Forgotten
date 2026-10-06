@@ -64,7 +64,13 @@ public sealed class RoomChatUI : MonoBehaviour
     {
         if (hudButton != null) hudButton.onClick.RemoveListener(Open);
         hudButton = button;
-        if (hudButton != null) hudButton.onClick.AddListener(Open);
+        if (hudButton != null)
+        {
+            var buttonRect = (RectTransform)hudButton.transform;
+            buttonRect.anchorMin = buttonRect.anchorMax = buttonRect.pivot = Vector2.right;
+            buttonRect.anchoredPosition = new Vector2(-18, 112);
+            hudButton.onClick.AddListener(Open);
+        }
         Refresh();
     }
 
@@ -137,9 +143,10 @@ public sealed class RoomChatUI : MonoBehaviour
             if (pixels <= 0 && Application.isMobilePlatform) pixels = Screen.height * 0.48f;
             keyboardHeight = Mathf.Max(0, pixels - Screen.safeArea.yMin) / Mathf.Max(0.01f, canvas.scaleFactor);
         }
-        float available = Mathf.Max(190, safe.rect.height - keyboardHeight - 24);
-        dialog.sizeDelta = new Vector2(Mathf.Min(680, safe.rect.width - 32), Mathf.Min(430, available));
-        dialog.anchoredPosition = new Vector2(0, keyboardHeight * 0.5f);
+        float bottom = Mathf.Max(112, keyboardHeight + 12);
+        float available = Mathf.Max(190, safe.rect.height - bottom - 16);
+        dialog.sizeDelta = new Vector2(Mathf.Min(500, safe.rect.width - 32), Mathf.Min(360, available));
+        dialog.anchoredPosition = new Vector2(-16, bottom);
     }
 
     private void Build()
@@ -157,19 +164,19 @@ public sealed class RoomChatUI : MonoBehaviour
         UI.Stretch(safe);
         safe.gameObject.AddComponent<MobileSafeArea>();
         compact = UI.Rect("Chat HUD", safe);
-        compact.anchorMin = compact.anchorMax = compact.pivot = new Vector2(0, 1);
-        compact.anchoredPosition = new Vector2(20, -18);
+        compact.anchorMin = compact.anchorMax = compact.pivot = Vector2.right;
+        compact.anchoredPosition = new Vector2(-20, 112);
         compact.sizeDelta = new Vector2(440, 190);
-        var open = UI.Button(compact, "Open Chat", Application.isMobilePlatform ? "CHAT" : "CHAT  [T]");
+        var open = UI.Button(compact, "Open Chat", Application.isMobilePlatform ? "MESSAGES" : "MESSAGES  [T]");
         fallbackButton = open;
         var openRect = (RectTransform)open.transform;
-        openRect.anchorMin = openRect.anchorMax = openRect.pivot = new Vector2(0, 1);
-        openRect.sizeDelta = new Vector2(132, 44);
+        openRect.anchorMin = openRect.anchorMax = openRect.pivot = Vector2.right;
+        openRect.sizeDelta = new Vector2(160, 52);
         open.onClick.AddListener(Open);
         preview = UI.Text(compact, "Recent Messages", "", 17);
         UI.Stretch(preview.rectTransform);
-        preview.rectTransform.offsetMin = new Vector2(4, 0);
-        preview.rectTransform.offsetMax = new Vector2(-4, -54);
+        preview.rectTransform.offsetMin = new Vector2(4, 60);
+        preview.rectTransform.offsetMax = new Vector2(-4, -4);
         preview.alignment = TextAlignmentOptions.TopLeft;
         preview.overflowMode = TextOverflowModes.Ellipsis;
         var shadow = preview.gameObject.AddComponent<Shadow>();
@@ -181,7 +188,7 @@ public sealed class RoomChatUI : MonoBehaviour
         UI.Paint(shade, new Color(0, 0, 0, 0.62f));
         composer = shade.gameObject;
         dialog = UI.Rect("Chat Panel", shade);
-        dialog.anchorMin = dialog.anchorMax = dialog.pivot = new Vector2(0.5f, 0.5f);
+        dialog.anchorMin = dialog.anchorMax = dialog.pivot = Vector2.right;
         UI.Paint(dialog, UI.Background);
         UI.Vertical(dialog, 16, 8);
         var heading = UI.Rect("Heading", dialog);
