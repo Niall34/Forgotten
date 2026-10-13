@@ -49,6 +49,7 @@ GameObject:
   - component: {fileID: -8314272142849647559}
   - component: {fileID: 5290357404427389631}
   - component: {fileID: -2942269655581590931}
+  - component: {fileID: 3939760014595542167}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -225,10 +226,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef316c9b742114c6194107c43e02b71d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIPrompt
-  infoColor: {r: 0.2, g: 0.4, b: 0.8, a: 0.9}
-  warningColor: {r: 0.8, g: 0.6, b: 0.2, a: 0.9}
-  successColor: {r: 0.2, g: 0.8, b: 0.4, a: 0.9}
-  errorColor: {r: 0.8, g: 0.2, b: 0.2, a: 0.9}
 --- !u!114 &5290357404427389631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -259,6 +256,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e57c3a8edb0fe0e4bb924ecaf89e41f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MinimapTarget
+--- !u!114 &3939760014595542167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 645025b2ad5844b718a9f80b316d90f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealthIndicator
+  fullHeartSprite: {fileID: 21300000, guid: fed24bd82cefc0c4a8ef64dab6231b53, type: 3}
+  emptyHeartSprite: {fileID: 21300002, guid: fed24bd82cefc0c4a8ef64dab6231b53, type: 3}
+  maxHearts: 3
+  maxHealth: 100
 --- !u!1001 &3849207414219338483
 PrefabInstance:
   m_ObjectHideFlags: 0

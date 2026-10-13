@@ -49,6 +49,7 @@ MonoBehaviour:
   - RPC_PieceInstalled
   - RPC_PlayerWon
   - TakeDamage
+  - ShowDamageNumber
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0
