@@ -52,7 +52,7 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
     {
         // Check if player is close enough and holding a piece
 
-        if (player == null || player.GetHeldPiece() == null)
+        if (player == null || player.GetHeldPiece() == null || piecesInstalled >= totalPiecesNeeded)
         {
             return false;
         }
@@ -68,15 +68,28 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
             return;
         }
 
-        // tell everyone a piece was added to the generator
-        photonView.RPC(nameof(RPC_PieceInstalled), RpcTarget.All);
-        piece.PlacedOnGenerator();
+        var carrier = PhotonView.Find(piece.HolderViewId)?.GetComponent<PlayerInventory>();
+        if (carrier != null) carrier.TryInstallPiece(piece, this);
+    }
+
+    public bool TryInstallAuthoritative(GeneratorPiece piece, PlayerInventory carrier)
+    {
+        if (!PhotonNetwork.IsMasterClient || carrier == null || piece == null || piece.IsInstalled ||
+            !piece.IsGeneratorPart || piece.HolderViewId != carrier.photonView.ViewID ||
+            piecesInstalled >= totalPiecesNeeded ||
+            Vector3.Distance(transform.position, carrier.transform.position) > interactionDistance + 0.25f)
+            return false;
+        if (!piece.Install()) return false;
+        photonView.RPC(nameof(ApplyInstalledCount), RpcTarget.AllBuffered, piecesInstalled + 1);
+        return true;
     }
 
     [PunRPC]
-    private void RPC_PieceInstalled()
+    private void ApplyInstalledCount(int count, PhotonMessageInfo info)
     {
-        piecesInstalled++;
+        if (info.Sender == null || (!info.Sender.IsMasterClient && PhotonNetwork.CurrentRoom.GetPlayer(info.Sender.ActorNumber) != null)) return;
+        if (count <= piecesInstalled) return;
+        piecesInstalled = Mathf.Min(count, totalPiecesNeeded);
 
         // Play sound effect 
         if (audioSource != null && mechanicalSoundEffect != null)
@@ -127,6 +140,7 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
             stream.SendNext(piecesInstalled);
         } else {
             piecesInstalled = (int)stream.ReceiveNext();
+            if (piecesInstalled >= totalPiecesNeeded) OpenDoor();
         }
     }
 }

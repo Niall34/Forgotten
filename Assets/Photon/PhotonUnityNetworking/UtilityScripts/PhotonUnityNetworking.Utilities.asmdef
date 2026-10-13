@@ -2,7 +2,8 @@
     "name": "PhotonUnityNetworking.Utilities",
     "references": [
         "PhotonRealtime",
-        "PhotonUnityNetworking"
+        "PhotonUnityNetworking",
+        "UnityEngine.UI"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],

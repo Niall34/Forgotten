@@ -83,7 +83,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     }
 
     private CharacterController controller;
-    private PlayerInventory playerInventory; // only used by the I/P test shortcuts below
+    private PlayerInventory playerInventory; // owns pickup, drop, install and backpack input
     private Camera playerCamera;
     private Transform cameraTransform;
     private float cameraPitch = 0f;
@@ -203,6 +203,17 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
 
         if (health != null && health.IsDead) return;
 
+        if (RoomChatUI.CapturesInput || (playerInventory != null && playerInventory.IsBackpackOpen))
+        {
+            lookSurface?.ConsumeLookDelta();
+            animatorSpeedParam = 0;
+            movementNoiseLevel = 0;
+            isSprinting = false;
+            if (animator != null) animator.SetFloat("Speed", 0);
+            if (controller.enabled) controller.Move(ApplyGravity() * Time.deltaTime);
+            return;
+        }
+
         HandleLook();
 
         // combine horizontal move + gravity into one Move call so we don't get double-move jitter
@@ -224,58 +235,6 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
             ToggleCrouch();
         }
 
-        // P/I are PC stand-ins for the pickup/install UI buttons, just call PlayerInventory's own methods
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            TryPickUpNearestPiece();
-        }
-
-        if (Input.GetKeyDown(KeyCode.I))
-        {
-            playerInventory?.OnInstallButtonDown();
-        }
-
-        if (Input.GetKey(KeyCode.I))
-        {
-            playerInventory?.UpdateInstallProgress();
-        }
-
-        if (Input.GetKeyUp(KeyCode.I))
-        {
-            playerInventory?.OnInstallButtonUp();
-        }
-    }
-
-    private void TryPickUpNearestPiece() // finds and picks up the closest piece, mirrors PlayerInventory's own search
-    {
-        if (playerInventory == null || playerInventory.GetHeldPiece() != null)
-        {
-            return;
-        }
-
-        GeneratorPiece[] allPieces = FindObjectsByType<GeneratorPiece>();
-        GeneratorPiece closestPiece = null;
-        float closestDistance = 3f; // matches PlayerInventory's own pickup range
-
-        foreach (GeneratorPiece piece in allPieces)
-        {
-            if (piece.IsPickedUp())
-            {
-                continue;
-            }
-
-            float distance = Vector3.Distance(transform.position, piece.transform.position);
-            if (distance < closestDistance)
-            {
-                closestPiece = piece;
-                closestDistance = distance;
-            }
-        }
-
-        if (closestPiece != null)
-        {
-            playerInventory.PickUpPiece(closestPiece);
-        }
     }
 
     private void UpdateMovementNoiseLevel() // works out how "loud" this player is right now, only meaningful on the owner
