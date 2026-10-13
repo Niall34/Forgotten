@@ -58,9 +58,11 @@ namespace Forgotten.Player
             if (IsDead) return;
             CurrentState = PlayerLifeState.Dead;
             SpeedMultiplier = 0.5f;
-            if (movementController != null) movementController.enabled = true;
-            GetComponent<CharacterController>().enabled = true;
+            if (movementController != null) movementController.enabled = false;
+            GetComponent<CharacterController>().enabled = false;
             spectatorController?.BeginSpectating(this);
+            if (movementController != null) spectatorController.enabled = true;
+            GetComponent<SpectatorController>().enabled = true;
         }
     }
 }
