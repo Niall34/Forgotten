@@ -1,51 +1,143 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using UI = ForgottenSettingsUI;
+
+// pairs a settings button with the panel that should come back when settings closes
+[System.Serializable]
+public class SettingsOpener
+{
+    public Button button;
+    public GameObject returnPanel;
+}
 
 /// <summary>Tabbed lobby settings with live previews and explicit save/discard behavior.</summary>
 public sealed class ForgottenSettingsMenu : MonoBehaviour
 {
-    private readonly GameObject[] pages = new GameObject[4];
-    private readonly Button[] tabs = new Button[4];
-    private readonly Button[] qualityButtons = new Button[3];
-    private readonly Button[] frameButtons = new Button[2];
-    private GameObject mainLobbyPanel;
-    private GameObject settingsPanel;
-    private GameObject resetConfirmation;
-    private ScrollRect scroll;
-    private Slider gameVolumeSlider, musicVolumeSlider, fieldOfViewSlider, hudScaleSlider, sensitivitySlider;
-    private TextMeshProUGUI gameVolumeValue, musicVolumeValue, fieldOfViewValue, hudScaleValue, sensitivityValue;
-    private TextMeshProUGUI stateLabel, chatValue, invertValue, graphicsDescription;
-    private Button chatButton, invertButton;
-    private RectTransform previewJoystick, previewChat;
+    [Header("Panels")]
+    public GameObject settingsPanel; // the whole settings screen, starts hidden at runtime
+    public SettingsOpener[] openers; // one entry per settings button, with the panel to come back to
+
+    [Header("Tabs")]
+    public Button[] tabs; // audio, display, controls, chat in that order
+    public GameObject[] pages; // same order as the tabs
+
+    [Header("Audio Page")]
+    public Slider gameVolumeSlider;
+    public Slider musicVolumeSlider;
+    public Button testSoundButton;
+
+    [Header("Display Page")]
+    public Button[] qualityButtons; // low, medium, high
+    public Button[] frameButtons; // 20 fps, 40 fps then 60 fps
+    public Slider fieldOfViewSlider;
+
+    [Header("Controls Page")]
+    public Slider hudScaleSlider;
+    public TextMeshProUGUI hudScaleValue; // optional
+    public Slider sensitivitySlider;
+    public TextMeshProUGUI sensitivityValue; // optional
+    public Button invertOnButton;
+    public Button invertOffButton;
+    public RectTransform previewJoystick; // the fake joystick in the size preview
+    public RectTransform previewChat; // the fake chat button in the size preview
+
+    [Header("Chat Page")]
+    public Button chatOnButton;
+    public Button chatOffButton;
+
+    [Header("Footer")]
+    public Button backButton;
+    public Button saveButton;
+
+    [Header("Colors")]
+    public Color accentColor = new Color(0.9019608f, 0.4428978f, 0.4428978f, 1f);
+    public Color controlColor = new Color32(61, 53, 50, 255);
+    public Color textColor = new Color32(239, 230, 218, 255);
+    public Color mutedColor = new Color32(185, 173, 164, 255);
+    public Color onAccentColor = new Color32(28, 15, 14, 255);
+
+    private GameObject returnPanel;
+    private int lastClosedFrame = -1;
     private AudioSource lobbyMusic, testSound;
     private AudioClip testClip;
-    private ForgottenSettingsSnapshot draft, saved;
+    private ForgottenSettingsSnapshot draft;
     private bool initialized, updatingControls;
 
-    public void Initialize(GameObject lobbyPanel)
+    public bool IsOpen => settingsPanel != null && settingsPanel.activeSelf; // true while the settings screen is showing
+    public bool JustClosed => lastClosedFrame == Time.frameCount; // true if it closed this frame, lets other escape handlers back off
+
+    private void Awake() // sets itself up so any scene can use it without a parent script calling initialize
+    {
+        Initialize();
+    }
+
+    public void Initialize() // wires every button and slider, loads the saved settings and hides the panel
     {
         if (initialized)
             return;
         initialized = true;
-        mainLobbyPanel = lobbyPanel;
-        UI.MatchLobby(lobbyPanel.transform);
-        CreateSettingsButton(lobbyPanel.transform);
-        settingsPanel = CreateSettingsPanel();
-        SetControls(saved = ForgottenGameSettings.Load());
+
+        // slider ranges live here so the inspector can't drift out of sync with the settings class
+        ConfigureSlider(gameVolumeSlider, 0f, 100f);
+        ConfigureSlider(musicVolumeSlider, 0f, 100f);
+        ConfigureSlider(fieldOfViewSlider, ForgottenGameSettings.MinimumFieldOfView, ForgottenGameSettings.MaximumFieldOfView);
+        ConfigureSlider(hudScaleSlider, ForgottenGameSettings.MinimumHudScale * 100f, ForgottenGameSettings.MaximumHudScale * 100f);
+        ConfigureSlider(sensitivitySlider, ForgottenGameSettings.MinimumLookSensitivity * 100f, ForgottenGameSettings.MaximumLookSensitivity * 100f);
+
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            int index = i;
+            tabs[i].onClick.AddListener(() => SelectPage(index));
+        }
+
+        for (int i = 0; i < qualityButtons.Length; i++)
+        {
+            int quality = i;
+            qualityButtons[i].onClick.AddListener(() => ChangeChoice(quality: quality));
+        }
+
+        for (int i = 0; i < frameButtons.Length && i < ForgottenGameSettings.FrameRates.Length; i++)
+        {
+            int rate = ForgottenGameSettings.FrameRates[i];
+            frameButtons[i].onClick.AddListener(() => ChangeChoice(frameRate: rate));
+        }
+
+        invertOnButton.onClick.AddListener(() => ChangeChoice(invert: true));
+        invertOffButton.onClick.AddListener(() => ChangeChoice(invert: false));
+        chatOnButton.onClick.AddListener(() => ChangeChoice(chat: true));
+        chatOffButton.onClick.AddListener(() => ChangeChoice(chat: false));
+        testSoundButton.onClick.AddListener(PlayTestSound);
+        foreach (SettingsOpener opener in openers)
+        {
+            if (opener.button == null) continue;
+            GameObject target = opener.returnPanel;
+            opener.button.onClick.AddListener(() => OpenSettings(target));
+        }
+        backButton.onClick.AddListener(BackWithoutSaving);
+        saveButton.onClick.AddListener(SaveAndClose);
+
+        SetControls(ForgottenGameSettings.Load());
         SelectPage(0);
         settingsPanel.SetActive(false);
     }
 
-    public void HideImmediately()
+    private void ConfigureSlider(Slider slider, float minimum, float maximum) // sets the slider range and listens for changes
     {
-        if (settingsPanel == null)
+        slider.minValue = minimum;
+        slider.maxValue = maximum;
+        slider.wholeNumbers = true;
+        slider.onValueChanged.AddListener(HandleControlChanged);
+    }
+
+    public void HideImmediately() // closes the panel right away and throws away any unsaved changes
+    {
+        if (!initialized || settingsPanel == null)
             return;
         if (settingsPanel.activeSelf)
         {
-            SetControls(saved = ForgottenGameSettings.Load());
+            SetControls(ForgottenGameSettings.Load());
             ApplyDraft();
+            lastClosedFrame = Time.frameCount;
         }
         settingsPanel.SetActive(false);
     }
@@ -55,72 +147,60 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         lobbyMusic = source;
     }
 
-    private void Update()
+    private void Update() // escape backs out of settings without saving
     {
         if (settingsPanel != null && settingsPanel.activeSelf &&
             Input.GetKeyDown(KeyCode.Escape))
         {
-            if (resetConfirmation.activeSelf)
-                resetConfirmation.SetActive(false);
-            else
-                BackWithoutSaving();
+            BackWithoutSaving();
         }
     }
 
-    private void OnDestroy()
+    private void OnDestroy() // cleans up the generated test tone
     {
-        if (settingsPanel != null)
-            Destroy(settingsPanel);
         if (testClip != null)
             Destroy(testClip);
     }
 
-    private void OnDisable()
+    private void OnDisable() // makes sure the panel is closed if this gets switched off
     {
         HideImmediately();
     }
 
-    private void OpenSettings()
+    private void OpenSettings(GameObject openedFrom) // loads the saved values, hides the panel it was opened from and shows settings
     {
-        SetControls(saved = ForgottenGameSettings.Load());
+        SetControls(ForgottenGameSettings.Load());
         ApplyDraft();
-        mainLobbyPanel.SetActive(false);
+        returnPanel = openedFrom;
+        if (returnPanel != null) returnPanel.SetActive(false);
         settingsPanel.SetActive(true);
-        resetConfirmation.SetActive(false);
         SelectPage(0);
     }
 
-    private void SaveAndClose()
+    private void SaveAndClose() // writes the draft to disk then goes back to the lobby
     {
         draft = ReadControls();
         ForgottenGameSettings.Save(draft);
-        saved = draft;
         ApplyDraft();
-        CloseToLobby();
+        CloseToPreviousPanel();
     }
 
-    private void BackWithoutSaving()
+    private void BackWithoutSaving() // reverts to what was saved then goes back to the lobby
     {
-        SetControls(saved = ForgottenGameSettings.Load());
+        SetControls(ForgottenGameSettings.Load());
         ApplyDraft();
-        CloseToLobby();
+        CloseToPreviousPanel();
     }
 
-    private void ResetDraft()
+    private void CloseToPreviousPanel() // hides settings and brings back the panel it was opened from
     {
-        SetControls(ForgottenGameSettings.Defaults);
-        ApplyDraft();
-        resetConfirmation.SetActive(false);
-    }
-
-    private void CloseToLobby()
-    {
-        resetConfirmation.SetActive(false);
         settingsPanel.SetActive(false);
-        mainLobbyPanel.SetActive(true);
+        lastClosedFrame = Time.frameCount;
+        if (returnPanel != null) returnPanel.SetActive(true);
+        returnPanel = null;
     }
 
-    private void SetControls(ForgottenSettingsSnapshot settings)
+    private void SetControls(ForgottenSettingsSnapshot settings) // pushes a snapshot into the sliders without firing their events
     {
         updatingControls = true;
         draft = settings.Sanitized();
@@ -133,7 +213,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         RefreshLabels();
     }
 
-    private ForgottenSettingsSnapshot ReadControls()
+    private ForgottenSettingsSnapshot ReadControls() // builds a snapshot from the sliders plus the button choices in the draft
     {
         return new ForgottenSettingsSnapshot(
             gameVolumeSlider.value / 100f, musicVolumeSlider.value / 100f,
@@ -142,7 +222,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
             draft.InvertLook, draft.FrameRate).Sanitized();
     }
 
-    private void HandleControlChanged(float ignored)
+    private void HandleControlChanged(float ignored) // runs when any slider moves, updates the draft and previews it live
     {
         if (updatingControls)
             return;
@@ -151,7 +231,7 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         ApplyDraft();
     }
 
-    private void ChangeChoice(int? quality = null, int? frameRate = null, bool? chat = null, bool? invert = null)
+    private void ChangeChoice(int? quality = null, int? frameRate = null, bool? chat = null, bool? invert = null) // changes one button setting in the draft and leaves the rest alone
     {
         draft = new ForgottenSettingsSnapshot(draft.GameVolume, draft.MusicVolume,
             quality ?? draft.GraphicsQuality, draft.FieldOfView, draft.HudScale,
@@ -161,54 +241,52 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         ApplyDraft();
     }
 
-    private void ApplyDraft()
+    private void ApplyDraft() // previews the draft right now, including the lobby music volume
     {
         ForgottenGameSettings.Apply(draft);
         if (lobbyMusic != null)
             lobbyMusic.volume = draft.MusicVolume;
     }
 
-    private void RefreshLabels()
+    private void SetSelected(Button button, bool selected) // colours a button as picked or not picked
     {
-        gameVolumeValue.text = gameVolumeSlider.value == 0f ? "MUTED" : gameVolumeSlider.value + "%";
-        musicVolumeValue.text = musicVolumeSlider.value == 0f ? "MUTED" : musicVolumeSlider.value + "%";
-        fieldOfViewValue.text = fieldOfViewSlider.value + "°";
-        hudScaleValue.text = hudScaleSlider.value + "%";
-        sensitivityValue.text = (sensitivitySlider.value / 100f).ToString("0.00") + "x";
-        chatValue.text = draft.GameChatEnabled ? "ON" : "OFF";
-        invertValue.text = draft.InvertLook ? "ON" : "OFF";
-        UI.SetSelected(chatButton, draft.GameChatEnabled);
-        UI.SetSelected(invertButton, draft.InvertLook);
-        for (int i = 0; i < qualityButtons.Length; i++)
-            UI.SetSelected(qualityButtons[i], draft.GraphicsQuality == i);
-        for (int i = 0; i < frameButtons.Length; i++)
-            UI.SetSelected(frameButtons[i], draft.FrameRate == (i == 0 ? 30 : 60));
-        graphicsDescription.text = draft.GraphicsQuality == 0
-            ? "LOW  /  Reduced resolution and shadows. Start here on older phones."
-            : draft.GraphicsQuality == 1
-                ? "MEDIUM  /  Balanced resolution, shadows and edge smoothing."
-                : "HIGH  /  Full resolution, longer shadows and smoother edges.";
-        bool changed = !draft.Equals(saved);
-        stateLabel.text = changed ? "Unsaved changes" : "All changes saved";
-        stateLabel.color = changed ? UI.Accent : UI.Muted;
-        previewJoystick.localScale = Vector3.one * (draft.HudScale * 0.43f);
-        previewChat.localScale = Vector3.one * (draft.HudScale * 0.7f);
+        if (button.image != null)
+            button.image.color = selected ? accentColor : controlColor;
+        TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
+        if (label != null)
+            label.color = selected ? onAccentColor : textColor;
     }
 
-    private void SelectPage(int index)
+    private void RefreshLabels() // updates the button highlights, and the remaining value labels
     {
-        scroll.StopMovement();
+        if (hudScaleValue != null)
+            hudScaleValue.text = hudScaleSlider.value + "%";
+        if (sensitivityValue != null)
+            sensitivityValue.text = (sensitivitySlider.value / 100f).ToString("0.00") + "x";
+        SetSelected(chatOnButton, draft.GameChatEnabled);
+        SetSelected(chatOffButton, !draft.GameChatEnabled);
+        SetSelected(invertOnButton, draft.InvertLook);
+        SetSelected(invertOffButton, !draft.InvertLook);
+        for (int i = 0; i < qualityButtons.Length; i++)
+            SetSelected(qualityButtons[i], draft.GraphicsQuality == i);
+        for (int i = 0; i < frameButtons.Length && i < ForgottenGameSettings.FrameRates.Length; i++)
+            SetSelected(frameButtons[i], draft.FrameRate == ForgottenGameSettings.FrameRates[i]);
+        if (previewJoystick != null)
+            previewJoystick.localScale = Vector3.one * (draft.HudScale * 0.43f);
+        if (previewChat != null)
+            previewChat.localScale = Vector3.one * (draft.HudScale * 0.7f);
+    }
+
+    private void SelectPage(int index) // shows one page and highlights its tab
+    {
         for (int i = 0; i < pages.Length; i++)
         {
             pages[i].SetActive(i == index);
-            UI.SetSelected(tabs[i], i == index);
+            SetSelected(tabs[i], i == index);
         }
-        scroll.content = (RectTransform)pages[index].transform;
-        Canvas.ForceUpdateCanvases();
-        scroll.verticalNormalizedPosition = 1f;
     }
 
-    private void PlayTestSound()
+    private void PlayTestSound() // builds a short quiet tone the first time then plays it to check volume
     {
         if (testSound == null)
         {
@@ -229,258 +307,5 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         }
         testSound.Stop();
         testSound.Play();
-    }
-
-    private void CreateSettingsButton(Transform parent)
-    {
-        Button button = UI.Button(parent, "SettingsButton", "SETTINGS");
-        RectTransform rect = (RectTransform)button.transform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
-        rect.anchoredPosition = new Vector2(150f, -90f);
-        rect.sizeDelta = new Vector2(160f, 36f);
-        button.onClick.AddListener(OpenSettings);
-    }
-
-    private GameObject CreateSettingsPanel()
-    {
-        RectTransform overlay = UI.Rect("Settings Menu", null);
-        Canvas canvas = overlay.gameObject.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 100;
-        CanvasScaler scaler = overlay.gameObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280f, 720f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
-        overlay.gameObject.AddComponent<GraphicRaycaster>();
-        if (Application.isPlaying)
-            DontDestroyOnLoad(overlay.gameObject);
-        UI.Paint(overlay, new Color(0.04f, 0.025f, 0.02f, 0.70f));
-        RectTransform safe = UI.Rect("Safe Area", overlay);
-        UI.Stretch(safe);
-        safe.gameObject.AddComponent<MobileSafeArea>();
-        RectTransform card = UI.Rect("Settings Card", safe);
-        UI.Anchors(card, new Vector2(0.05f, 0.04f), new Vector2(0.95f, 0.96f));
-        UI.Paint(card, UI.Background);
-        UI.Vertical(card, 24, 12f);
-
-        RectTransform header = UI.Rect("Header", card);
-        UI.Layout(header.gameObject, 64f);
-        TextMeshProUGUI eyebrow = UI.Text(header, "Eyebrow", "FORGOTTEN  /  PREFERENCES", 13f, true);
-        UI.Anchors(eyebrow.rectTransform, new Vector2(0f, 0.65f), Vector2.one);
-        TextMeshProUGUI title = UI.Text(header, "Title", "SETTINGS", 30f);
-        title.color = UI.Accent;
-        title.fontStyle = FontStyles.Bold | FontStyles.Italic;
-        UI.Anchors(title.rectTransform, Vector2.zero, new Vector2(0.75f, 0.65f));
-        TextMeshProUGUI hint = UI.Text(header, "Hint", "SAVED ON THIS DEVICE", 12f, true);
-        hint.alignment = TextAlignmentOptions.Right;
-        UI.Anchors(hint.rectTransform, new Vector2(0.72f, 0f), new Vector2(1f, 0.65f));
-
-        RectTransform tabBar = UI.Rect("Tabs", card);
-        UI.Layout(tabBar.gameObject, 48f);
-        UI.Horizontal(tabBar, 8f);
-        string[] labels = { "AUDIO", "DISPLAY", "CONTROLS", "TEAM CHAT" };
-        for (int i = 0; i < tabs.Length; i++)
-        {
-            int index = i;
-            tabs[i] = UI.Button(tabBar, labels[i], labels[i]);
-            UI.Layout(tabs[i].gameObject, 48f, 0f, 1f);
-            tabs[i].onClick.AddListener(() => SelectPage(index));
-        }
-
-        RectTransform body = UI.Rect("Page View", card);
-        UI.Layout(body.gameObject, 60f);
-        body.GetComponent<LayoutElement>().flexibleHeight = 1f;
-        UI.Paint(body, UI.Surface);
-        scroll = body.gameObject.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
-        scroll.movementType = ScrollRect.MovementType.Clamped;
-        scroll.scrollSensitivity = 24f;
-        RectTransform viewport = UI.Rect("Viewport", body);
-        UI.Stretch(viewport);
-        viewport.gameObject.AddComponent<RectMask2D>();
-        scroll.viewport = viewport;
-        string[] pageNames = { "Audio", "Display", "Controls", "Chat" };
-        for (int i = 0; i < pages.Length; i++)
-        {
-            RectTransform page = UI.Rect(pageNames[i] + " Page", viewport);
-            page.anchorMin = new Vector2(0f, 1f);
-            page.anchorMax = Vector2.one;
-            page.pivot = new Vector2(0.5f, 1f);
-            page.sizeDelta = Vector2.zero;
-            UI.Vertical(page, 16, 8f);
-            page.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            pages[i] = page.gameObject;
-        }
-        BuildAudio(pages[0].transform);
-        BuildDisplay(pages[1].transform);
-        BuildControls(pages[2].transform);
-        BuildChat(pages[3].transform);
-        CreateFooter(card);
-        CreateResetConfirmation(overlay);
-        return overlay.gameObject;
-    }
-
-    private void BuildAudio(Transform parent)
-    {
-        Description(parent, "Keep the atmosphere. Hear your team.", 24f);
-        Description(parent, "Adjust the lobby music live. Game volume controls all sound, including music.", 16f, true);
-        gameVolumeSlider = SliderRow(parent, "Game volume", "Overall listening level", 0f, 100f, out gameVolumeValue);
-        musicVolumeSlider = SliderRow(parent, "Music volume", "Lobby soundtrack", 0f, 100f, out musicVolumeValue);
-        RectTransform row = Row(parent, "Audio test", "A short, gentle tone to check game volume.", 60f);
-        Button test = UI.Button(row, "Test Sound", "TEST SOUND");
-        UI.Layout(test.gameObject, 48f, 170f);
-        test.onClick.AddListener(PlayTestSound);
-    }
-
-    private void BuildDisplay(Transform parent)
-    {
-        Description(parent, "Find your balance.", 24f);
-        RectTransform qualityRow = Row(parent, "Graphics", "Detail and image clarity", 66f);
-        string[] names = { "LOW", "MEDIUM", "HIGH" };
-        for (int i = 0; i < names.Length; i++)
-        {
-            int quality = i;
-            qualityButtons[i] = UI.Button(qualityRow, names[i], names[i]);
-            UI.Layout(qualityButtons[i].gameObject, 48f, 96f);
-            qualityButtons[i].onClick.AddListener(() => ChangeChoice(quality: quality));
-        }
-        graphicsDescription = Description(parent, "", 15f, true);
-        RectTransform fpsRow = Row(parent, "Frame rate", "30 uses less power; 60 feels smoother.", 66f);
-        for (int i = 0; i < 2; i++)
-        {
-            int rate = i == 0 ? 30 : 60;
-            frameButtons[i] = UI.Button(fpsRow, rate + " FPS", rate + " FPS");
-            UI.Layout(frameButtons[i].gameObject, 48f, 150f);
-            frameButtons[i].onClick.AddListener(() => ChangeChoice(frameRate: rate));
-        }
-        fieldOfViewSlider = SliderRow(parent, "Field of view", "A wider view shows more of the room.", 60f, 100f, out fieldOfViewValue);
-        Description(parent, "Camera changes apply in your next match. Actual FPS depends on your device.", 15f, true);
-    }
-
-    private void BuildControls(Transform parent)
-    {
-        Description(parent, "A comfortable fit for your thumbs.", 24f);
-        hudScaleSlider = SliderRow(parent, "HUD & controls", "Resize the movement and chat controls.", 70f, 110f, out hudScaleValue);
-        sensitivitySlider = SliderRow(parent, "Look sensitivity", "How quickly the camera follows your swipe.", 50f, 200f, out sensitivityValue);
-        RectTransform invertRow = Row(parent, "Invert vertical look", "Reverse the camera's up and down movement.", 60f);
-        invertButton = UI.Button(invertRow, "Invert Look", "OFF");
-        UI.Layout(invertButton.gameObject, 48f, 150f);
-        invertValue = invertButton.GetComponentInChildren<TextMeshProUGUI>();
-        invertButton.onClick.AddListener(() => ChangeChoice(invert: !draft.InvertLook));
-        CreateHudPreview(parent);
-        Description(parent, "Preview shows control size. Saved changes apply when your next match starts.", 15f, true);
-    }
-
-    private void BuildChat(Transform parent)
-    {
-        Description(parent, "Stay in touch. Stay together.", 24f);
-        RectTransform row = Row(parent, "Team text chat", "Enable messages in online matches.", 70f);
-        chatButton = UI.Button(row, "Game Chat", "ON");
-        UI.Layout(chatButton.gameObject, 48f, 150f);
-        chatValue = chatButton.GetComponentInChildren<TextMeshProUGUI>();
-        chatButton.onClick.AddListener(() => ChangeChoice(chat: !draft.GameChatEnabled));
-        Description(parent, "IN YOUR MATCH", 14f, true);
-        Description(parent, "Open CHAT to message everyone in your room. Your lobby username appears beside your messages.", 18f);
-        Description(parent, "120 characters per message. Recent messages appear on your HUD; open CHAT for the last 24 messages.", 16f, true);
-        Description(parent, "Turning chat off hides messages and prevents sending. Save & Back confirms your choice.", 16f, true);
-    }
-
-    private TextMeshProUGUI Description(Transform parent, string value, float size, bool muted = false)
-    {
-        TextMeshProUGUI text = UI.Text(parent, value.Length > 0 ? value : "Description", value, size, muted);
-        UI.Layout(text.gameObject, size >= 24f ? 32f : 30f);
-        text.GetComponent<LayoutElement>().preferredHeight = -1f;
-        return text;
-    }
-
-    private RectTransform Row(Transform parent, string label, string description, float height)
-    {
-        RectTransform row = UI.Rect(label + " Row", parent);
-        UI.Layout(row.gameObject, height);
-        UI.Horizontal(row, 12f);
-        RectTransform labels = UI.Rect("Labels", row);
-        UI.Layout(labels.gameObject, height, 250f, 1f);
-        TextMeshProUGUI title = UI.Text(labels, "Label", label, 20f);
-        UI.Anchors(title.rectTransform, new Vector2(0f, 0.46f), Vector2.one);
-        TextMeshProUGUI note = UI.Text(labels, "Description", description, 14f, true);
-        UI.Anchors(note.rectTransform, Vector2.zero, new Vector2(1f, 0.46f));
-        return row;
-    }
-
-    private Slider SliderRow(Transform parent, string label, string description, float min, float max, out TextMeshProUGUI value)
-    {
-        RectTransform row = Row(parent, label, description, 62f);
-        Slider slider = UI.Slider(row, min, max);
-        slider.wholeNumbers = true;
-        UI.Layout(slider.gameObject, 48f, 250f);
-        value = UI.Text(row, "Value", "", 19f);
-        value.alignment = TextAlignmentOptions.Right;
-        UI.Layout(value.gameObject, 48f, 72f);
-        slider.onValueChanged.AddListener(HandleControlChanged);
-        return slider;
-    }
-
-    private void CreateHudPreview(Transform parent)
-    {
-        RectTransform preview = UI.Rect("HUD Preview", parent);
-        UI.Layout(preview.gameObject, 82f);
-        UI.Paint(preview, UI.Background);
-        TextMeshProUGUI label = UI.Text(preview, "Preview Label", "CONTROL SIZE PREVIEW", 12f, true);
-        UI.Anchors(label.rectTransform, new Vector2(0.3f, 0.5f), new Vector2(0.8f, 1f));
-        TextMeshProUGUI instruction = UI.Text(preview, "Preview Hint", "Movement and chat", 15f);
-        UI.Anchors(instruction.rectTransform, new Vector2(0.3f, 0f), new Vector2(0.8f, 0.5f));
-        ForgottenTouchJoystick joystick = ForgottenTouchJoystick.Create(preview, Vector2.zero, new Vector2(0.28f, 1f));
-        foreach (Graphic graphic in joystick.GetComponentsInChildren<Graphic>())
-            graphic.raycastTarget = false;
-        previewJoystick = (RectTransform)joystick.transform.Find("Background");
-        previewJoystick.GetComponent<Image>().color = UI.Control;
-        previewJoystick.Find("Handle").GetComponent<Image>().color = UI.Accent;
-        Button chat = UI.Button(preview, "Chat Preview", "CHAT");
-        previewChat = (RectTransform)chat.transform;
-        previewChat.anchorMin = previewChat.anchorMax = new Vector2(0.88f, 0.5f);
-        previewChat.sizeDelta = new Vector2(116f, 44f);
-        chat.interactable = false;
-    }
-
-    private void CreateFooter(Transform parent)
-    {
-        RectTransform footer = UI.Rect("Footer", parent);
-        UI.Layout(footer.gameObject, 76f);
-        UI.Horizontal(footer, 12f);
-        stateLabel = UI.Text(footer, "Save Status", "All changes saved", 16f, true);
-        UI.Layout(stateLabel.gameObject, 48f, 100f, 1f);
-        Button reset = UI.Button(footer, "Reset", "RESET");
-        Button back = UI.Button(footer, "Back", "BACK");
-        Button save = UI.Button(footer, "Save and Back", "SAVE & BACK", true);
-        UI.Layout(reset.gameObject, 48f, 110f);
-        UI.Layout(back.gameObject, 48f, 110f);
-        UI.Layout(save.gameObject, 48f, 164f);
-        reset.onClick.AddListener(() => resetConfirmation.SetActive(true));
-        back.onClick.AddListener(BackWithoutSaving);
-        save.onClick.AddListener(SaveAndClose);
-    }
-
-    private void CreateResetConfirmation(Transform parent)
-    {
-        RectTransform shade = UI.Rect("Reset Confirmation", parent);
-        UI.Stretch(shade);
-        UI.Paint(shade, new Color(0f, 0f, 0f, 0.85f));
-        resetConfirmation = shade.gameObject;
-        RectTransform dialog = UI.Rect("Dialog", shade);
-        dialog.sizeDelta = new Vector2(510f, 240f);
-        UI.Paint(dialog, UI.Surface);
-        UI.Vertical(dialog, 24, 12f);
-        Description(dialog, "Reset all settings?", 24f);
-        Description(dialog, "You can review the defaults before saving. Back will keep your saved settings.", 17f, true);
-        RectTransform buttons = UI.Rect("Actions", dialog);
-        UI.Layout(buttons.gameObject, 48f);
-        UI.Horizontal(buttons);
-        Button cancel = UI.Button(buttons, "Cancel Reset", "KEEP EDITING");
-        Button confirm = UI.Button(buttons, "Confirm Reset", "RESET", true);
-        UI.Layout(cancel.gameObject, 48f, 0f, 1f);
-        UI.Layout(confirm.gameObject, 48f, 0f, 1f);
-        cancel.onClick.AddListener(() => resetConfirmation.SetActive(false));
-        confirm.onClick.AddListener(ResetDraft);
-        resetConfirmation.SetActive(false);
     }
 }

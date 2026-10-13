@@ -9,18 +9,28 @@ public sealed class RoomChatUI : MonoBehaviour
 {
     private static RoomChatUI active;
     public static bool CapturesInput => active != null && active.composer != null && active.composer.activeSelf;
+    public Button chatButton; // drag your chat button from the hud canvas here, it opens the chat and hides when chat is off in settings
+
     private RoomChatSession session;
     private RectTransform root, safe, dialog, compact;
     private GameObject composer;
     private TextMeshProUGUI preview, history, status, count, roomLabel;
     private TMP_InputField input;
-    private Button send, hudButton, fallbackButton;
+    private Button send, hudButton;
     private ScrollRect scroll;
     private float previewUntil;
     private int observedCount;
     private Canvas canvas;
 
-    public void Initialize(RoomChatSession chat)
+    private void Start() // sets itself up like a normal scene script, finds or adds the chat session then links your button
+    {
+        RoomChatSession chat = GetComponent<RoomChatSession>();
+        if (chat == null) chat = gameObject.AddComponent<RoomChatSession>();
+        Initialize(chat);
+        if (chatButton != null) BindHudButton(chatButton);
+    }
+
+    public void Initialize(RoomChatSession chat) // builds the chat hud in code and hooks it to the session, runs once only
     {
         if (session != null) return;
         session = chat;
@@ -31,7 +41,7 @@ public sealed class RoomChatUI : MonoBehaviour
         OnSettingsSaved(ForgottenGameSettings.Load());
     }
 
-    private void OnDestroy()
+    private void OnDestroy() // removes every listener and the generated canvas so nothing is left behind
     {
         if (hudButton != null) hudButton.onClick.RemoveListener(Open);
         if (session != null) session.Changed -= Refresh;
@@ -39,12 +49,11 @@ public sealed class RoomChatUI : MonoBehaviour
         if (active == this) active = null;
         if (root != null) Destroy(root.gameObject);
     }
-    private void OnDisable() => Close();
+    private void OnDisable() => Close(); // closes the composer if this gets switched off
 
-    private void Update()
+    private void Update() // handles the keyboard shortcuts and the preview fade
     {
         if (session == null || !session.ChatEnabled) return;
-        fallbackButton.gameObject.SetActive(hudButton == null || !hudButton.gameObject.activeInHierarchy);
         if (composer.activeSelf)
         {
             if (Input.GetKeyDown(KeyCode.Escape)) Close();
@@ -54,27 +63,21 @@ public sealed class RoomChatUI : MonoBehaviour
         preview.gameObject.SetActive(!composer.activeSelf && Time.unscaledTime < previewUntil);
     }
 
-    private void OnSettingsSaved(ForgottenSettingsSnapshot settings)
+    private void OnSettingsSaved(ForgottenSettingsSnapshot settings) // applies the saved hud scale to the corner hud
     {
         compact.localScale = Vector3.one * settings.HudScale;
         Refresh();
     }
 
-    public void BindHudButton(Button button)
+    public void BindHudButton(Button button) // links your own hud button to the chat, it opens the chat and hides while chat is off in settings
     {
         if (hudButton != null) hudButton.onClick.RemoveListener(Open);
         hudButton = button;
-        if (hudButton != null)
-        {
-            var buttonRect = (RectTransform)hudButton.transform;
-            buttonRect.anchorMin = buttonRect.anchorMax = buttonRect.pivot = Vector2.right;
-            buttonRect.anchoredPosition = new Vector2(-18, 112);
-            hudButton.onClick.AddListener(Open);
-        }
+        if (hudButton != null) hudButton.onClick.AddListener(Open);
         Refresh();
     }
 
-    private void Refresh()
+    private void Refresh() // redraws the messages, status text and which buttons are usable
     {
         if (root == null) return;
         if (hudButton != null) hudButton.gameObject.SetActive(session.ChatEnabled);
@@ -106,7 +109,7 @@ public sealed class RoomChatUI : MonoBehaviour
         }
     }
 
-    public void Open()
+    public void Open() // shows the composer and focuses the input
     {
         if (session == null || !session.ChatEnabled) return;
         composer.SetActive(true);
@@ -115,7 +118,7 @@ public sealed class RoomChatUI : MonoBehaviour
         if (input.interactable) input.ActivateInputField();
     }
 
-    public void Close()
+    public void Close() // hides the composer and clears whatever was typed
     {
         if (composer == null) return;
         input.DeactivateInputField();
@@ -125,7 +128,7 @@ public sealed class RoomChatUI : MonoBehaviour
         compact.gameObject.SetActive(session != null && session.ChatEnabled);
     }
 
-    private void Send()
+    private void Send() // tries to send the typed message and shows the result in the status line
     {
         if (!session.TrySend(input.text, out string feedback)) { status.text = feedback; return; }
         input.SetTextWithoutNotify("");
@@ -134,7 +137,7 @@ public sealed class RoomChatUI : MonoBehaviour
         input.ActivateInputField();
     }
 
-    private void FitComposerAboveKeyboard()
+    private void FitComposerAboveKeyboard() // sizes the chat panel and lifts it so the phone keyboard does not cover it
     {
         float keyboardHeight = 0;
         if (TouchScreenKeyboard.visible)
@@ -143,13 +146,12 @@ public sealed class RoomChatUI : MonoBehaviour
             if (pixels <= 0 && Application.isMobilePlatform) pixels = Screen.height * 0.48f;
             keyboardHeight = Mathf.Max(0, pixels - Screen.safeArea.yMin) / Mathf.Max(0.01f, canvas.scaleFactor);
         }
-        float bottom = Mathf.Max(112, keyboardHeight + 12);
-        float available = Mathf.Max(190, safe.rect.height - bottom - 16);
-        dialog.sizeDelta = new Vector2(Mathf.Min(500, safe.rect.width - 32), Mathf.Min(360, available));
-        dialog.anchoredPosition = new Vector2(-16, bottom);
+        float available = Mathf.Max(190, safe.rect.height - keyboardHeight - 24);
+        dialog.sizeDelta = new Vector2(Mathf.Min(680, safe.rect.width - 32), Mathf.Min(430, available));
+        dialog.anchoredPosition = new Vector2(0, keyboardHeight * 0.5f);
     }
 
-    private void Build()
+    private void Build() // generates the canvas, corner hud, chat panel, input and buttons in code
     {
         root = UI.Rect("Team Chat HUD", transform);
         canvas = root.gameObject.AddComponent<Canvas>();
@@ -164,19 +166,13 @@ public sealed class RoomChatUI : MonoBehaviour
         UI.Stretch(safe);
         safe.gameObject.AddComponent<MobileSafeArea>();
         compact = UI.Rect("Chat HUD", safe);
-        compact.anchorMin = compact.anchorMax = compact.pivot = Vector2.right;
-        compact.anchoredPosition = new Vector2(-20, 112);
+        compact.anchorMin = compact.anchorMax = compact.pivot = new Vector2(0, 1);
+        compact.anchoredPosition = new Vector2(20, -18);
         compact.sizeDelta = new Vector2(440, 190);
-        var open = UI.Button(compact, "Open Chat", Application.isMobilePlatform ? "MESSAGES" : "MESSAGES  [T]");
-        fallbackButton = open;
-        var openRect = (RectTransform)open.transform;
-        openRect.anchorMin = openRect.anchorMax = openRect.pivot = Vector2.right;
-        openRect.sizeDelta = new Vector2(160, 52);
-        open.onClick.AddListener(Open);
         preview = UI.Text(compact, "Recent Messages", "", 17);
         UI.Stretch(preview.rectTransform);
-        preview.rectTransform.offsetMin = new Vector2(4, 60);
-        preview.rectTransform.offsetMax = new Vector2(-4, -4);
+        preview.rectTransform.offsetMin = new Vector2(4, 0);
+        preview.rectTransform.offsetMax = new Vector2(-4, 0);
         preview.alignment = TextAlignmentOptions.TopLeft;
         preview.overflowMode = TextOverflowModes.Ellipsis;
         var shadow = preview.gameObject.AddComponent<Shadow>();
@@ -188,7 +184,7 @@ public sealed class RoomChatUI : MonoBehaviour
         UI.Paint(shade, new Color(0, 0, 0, 0.62f));
         composer = shade.gameObject;
         dialog = UI.Rect("Chat Panel", shade);
-        dialog.anchorMin = dialog.anchorMax = dialog.pivot = Vector2.right;
+        dialog.anchorMin = dialog.anchorMax = dialog.pivot = new Vector2(0.5f, 0.5f);
         UI.Paint(dialog, UI.Background);
         UI.Vertical(dialog, 16, 8);
         var heading = UI.Rect("Heading", dialog);

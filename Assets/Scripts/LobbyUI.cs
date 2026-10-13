@@ -47,6 +47,9 @@ public class LobbyUI : MonoBehaviour
     public Button startButton;
     public Button hostLeaveButton;
 
+    [Header("Settings")]
+    public ForgottenSettingsMenu settingsMenu; // the settings screen, put it on the lobby canvas root
+
     [Header("Shared")]
     public TextMeshProUGUI statusText;
 
@@ -69,7 +72,6 @@ public class LobbyUI : MonoBehaviour
     private AudioSource uiSource;
     private AudioSource lobbyMusic;
     private NetworkManager net;
-    private ForgottenSettingsMenu settingsMenu;
     private string storedNickname = "";
 
     // if the host or join button is tapped before fully connected, remember what to do and carry it out automatically once the connection finishes - this is a backup/safety net
@@ -102,9 +104,8 @@ public class LobbyUI : MonoBehaviour
         canvas = GetComponent<Canvas>();
         net = NetworkManager.Bootstrap();
         SceneManager.sceneLoaded += HandleGameplaySceneLoaded; // catches the moment the new scene's actually ready
-        settingsMenu = GetComponent<ForgottenSettingsMenu>();
-        if (settingsMenu == null) settingsMenu = gameObject.AddComponent<ForgottenSettingsMenu>();
-        settingsMenu.Initialize(mainLobbyPanel);
+        if (settingsMenu == null) settingsMenu = GetComponent<ForgottenSettingsMenu>();
+        settingsMenu.Initialize();
         StartLobbyMusic();
 
         continueButton.onClick.AddListener(OnNameContinueClicked);

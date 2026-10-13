@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: 7478131813469942761}
   - component: {fileID: -8314272142849647559}
   - component: {fileID: 5290357404427389631}
+  - component: {fileID: -2942269655581590931}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -246,6 +247,18 @@ MonoBehaviour:
   injuredSpeedMultiplier: 0.5
   movementController: {fileID: 0}
   spectatorController: {fileID: 0}
+--- !u!114 &-2942269655581590931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e57c3a8edb0fe0e4bb924ecaf89e41f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MinimapTarget
 --- !u!1001 &3849207414219338483
 PrefabInstance:
   m_ObjectHideFlags: 0

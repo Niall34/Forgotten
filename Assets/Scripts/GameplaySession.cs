@@ -8,7 +8,7 @@ public class GameplaySession : MonoBehaviour
     public string playerPrefabName = "Player/Player";
     public string monsterPrefabName = "Monster/Prefabs/Monster";
 
-    private void Start()
+    private void Start() // adds the chat, then spawns the player and the monster if this is the master client
     {
         RoomChatSession chat = gameObject.AddComponent<RoomChatSession>();
         gameObject.AddComponent<RoomChatUI>().Initialize(chat);
@@ -20,7 +20,7 @@ public class GameplaySession : MonoBehaviour
         }
     }
 
-    private void SpawnLocalPlayer()
+    private void SpawnLocalPlayer() // spawns this player at a random player spawn point
     {
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
@@ -38,7 +38,7 @@ public class GameplaySession : MonoBehaviour
         PhotonNetwork.Instantiate(playerPrefabName, spawnPosition, spawnRotation);
     }
 
-    private void SpawnMonster()
+    private void SpawnMonster() // spawns the monster at a random monster spawn point
     {
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;

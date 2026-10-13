@@ -39,7 +39,7 @@ public static class ForgottenGraphicsSettings
         }
 
         QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = frameRate <= 30 ? 30 : 60;
+        Application.targetFrameRate = ForgottenGameSettings.NearestFrameRate(frameRate);
         quality = Mathf.Clamp(quality, 0, 2);
         if (runtimePipeline == null || appliedQuality == quality)
             return;

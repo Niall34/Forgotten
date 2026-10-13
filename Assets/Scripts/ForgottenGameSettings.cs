@@ -26,6 +26,13 @@ public static class ForgottenGameSettings
     public const float MinimumLookSensitivity = 0.5f;
     public const float MaximumLookSensitivity = 2f;
 
+    public static readonly int[] FrameRates = { 20, 40, 60 }; // the three frame rate choices, lowest first
+
+    public static int NearestFrameRate(int value) // snaps any saved number to one of the three choices, old 30 saves become 20
+    {
+        return value <= 30 ? FrameRates[0] : value <= 50 ? FrameRates[1] : FrameRates[2];
+    }
+
     public static ForgottenSettingsSnapshot Defaults => new ForgottenSettingsSnapshot(
         gameVolume: 0.85f,
         musicVolume: 0.75f,
@@ -135,7 +142,7 @@ public readonly struct ForgottenSettingsSnapshot
             GameChatEnabled,
             ClampFinite(LookSensitivity, ForgottenGameSettings.MinimumLookSensitivity, ForgottenGameSettings.MaximumLookSensitivity, 1f),
             InvertLook,
-            FrameRate <= 30 ? 30 : 60);
+            ForgottenGameSettings.NearestFrameRate(FrameRate));
     }
 
     private static float ClampFinite(float value, float minimum, float maximum, float fallback)

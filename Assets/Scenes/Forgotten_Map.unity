@@ -198169,6 +198169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ForgottenGameplaySession
   playerPrefabName: Player/Player
   monsterPrefabName: Monster/Monster
+  chatUI: {fileID: 0}
 --- !u!1001 &2061654655
 PrefabInstance:
   m_ObjectHideFlags: 0

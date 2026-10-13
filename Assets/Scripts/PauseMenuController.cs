@@ -10,6 +10,7 @@ public class PauseMenuController : MonoBehaviour
     public GameObject pausePanel; // drag in your pause menu panel here, should start INACTIVE in the Inspector
     public TextMeshProUGUI roomCodeText; // optional, a text inside the pause panel, shows the room code while paused (blank in solo)
     public AudioClip buttonClickClip; // plays when any button inside the pause panel is pressed
+    public ForgottenSettingsMenu settingsMenu; // optional, the settings screen, its open button sits inside the pause panel
 
     private bool isPaused = false;
     private AudioSource uiSource;
@@ -28,6 +29,15 @@ public class PauseMenuController : MonoBehaviour
         {
             button.onClick.AddListener(PlayButtonClick);
         }
+
+        if (settingsMenu != null && settingsMenu.settingsPanel != null)
+        {
+            // the settings panel sits outside the pause panel so it needs its own click sounds
+            foreach (Button button in settingsMenu.settingsPanel.GetComponentsInChildren<Button>(true))
+            {
+                button.onClick.AddListener(PlayButtonClick);
+            }
+        }
     }
 
     private void PlayButtonClick()
@@ -42,6 +52,12 @@ public class PauseMenuController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // settings handles its own escape, so skip pausing while it is open or closed this frame
+            if (settingsMenu != null && (settingsMenu.IsOpen || settingsMenu.JustClosed))
+            {
+                return;
+            }
+
             TogglePause();
         }
     }
@@ -77,6 +93,11 @@ public class PauseMenuController : MonoBehaviour
 
     private void ApplyPausedState(bool paused) // does the actual work - shows/hides the panel, freezes/unfreezes the game, shows/hides the cursor
     {
+        if (paused == false && settingsMenu != null)
+        {
+            settingsMenu.HideImmediately(); // resuming by any route should never leave settings floating on screen
+        }
+
         if (pausePanel != null)
         {
             pausePanel.SetActive(paused);
