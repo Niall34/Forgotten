@@ -45,10 +45,10 @@ GameObject:
   - component: {fileID: -8557288221404098560}
   - component: {fileID: 5974925283950154236}
   - component: {fileID: 209546359802999642}
-  - component: {fileID: 7478131813469942761}
-  - component: {fileID: -8314272142849647559}
   - component: {fileID: 5290357404427389631}
   - component: {fileID: -2942269655581590931}
+  - component: {fileID: -120378453988017909}
+  - component: {fileID: 7038157048089561442}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -198,37 +198,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7478131813469942761
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8650357492239534285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 960e84d414e7748719f8a4b47a432acc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
-  speedPenalty: 0.5
-  generator: {fileID: 0}
-  installHoldDuration: 10
---- !u!114 &-8314272142849647559
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8650357492239534285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef316c9b742114c6194107c43e02b71d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UIPrompt
-  infoColor: {r: 0.2, g: 0.4, b: 0.8, a: 0.9}
-  warningColor: {r: 0.8, g: 0.6, b: 0.2, a: 0.9}
-  successColor: {r: 0.2, g: 0.8, b: 0.4, a: 0.9}
-  errorColor: {r: 0.8, g: 0.2, b: 0.2, a: 0.9}
 --- !u!114 &5290357404427389631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -259,6 +228,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e57c3a8edb0fe0e4bb924ecaf89e41f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MinimapTarget
+--- !u!114 &-120378453988017909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cd554d4ac4b59b46b4c86142c03dd6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
+  speedPenalty: 0.5
+  generator: {fileID: 0}
+  installHoldDuration: 10
+--- !u!114 &7038157048089561442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44ae4227edd5bac4194d06002e2f5734, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIPrompt
 --- !u!1001 &3849207414219338483
 PrefabInstance:
   m_ObjectHideFlags: 0

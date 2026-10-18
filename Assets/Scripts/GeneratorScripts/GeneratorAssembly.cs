@@ -14,7 +14,7 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
     public float interactionDistance = 2f;
 
     [Header("Visual Feedback")]
-    public Transform motorShaft; 
+    public Transform motorShaft;
     public float maxMotorSpinSpeed = 360f;
     public AudioClip mechanicalSoundEffect;
     public float soundVolume = 0.7f;
@@ -45,7 +45,7 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
             currentMotorSpeed = Mathf.Lerp(currentMotorSpeed, (piecesInstalled / (float)totalPiecesNeeded) * maxMotorSpinSpeed, Time.deltaTime * 2f);
             motorShaft.Rotate(Vector3.forward, currentMotorSpeed * Time.deltaTime);
         }
-        
+
     }
 
     public bool CanInstallPiece(PlayerInventory player)
@@ -120,6 +120,12 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
         }
 
         Debug.Log("Generator completed! Door opened!");
+
+        // every client runs this, so every client posts the line into its own chat
+        if (RoomChatSession.Current != null)
+        {
+            RoomChatSession.Current.AddSystemMessage("Generator completed! Door opened!");
+        }
     }
 
     public int GetPiecesInstalled()
@@ -131,14 +137,16 @@ public class GeneratorAssembly : MonoBehaviourPun, IPunObservable
     {
         return totalPiecesNeeded;
     }
-    
+
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
         // Sync the number of pieces installed across all clients 
         if (stream.IsWriting)
         {
             stream.SendNext(piecesInstalled);
-        } else {
+        }
+        else
+        {
             piecesInstalled = (int)stream.ReceiveNext();
             if (piecesInstalled >= totalPiecesNeeded) OpenDoor();
         }

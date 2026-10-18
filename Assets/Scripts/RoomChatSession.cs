@@ -20,10 +20,12 @@ public sealed class RoomChatSession : MonoBehaviourPunCallbacks, IOnEventCallbac
     public bool ChatEnabled { get; private set; }
     public event Action Changed;
     public bool IsInRoom => PhotonNetwork.InRoom;
+    public static RoomChatSession Current { get; private set; } // the chat of this client, other scripts use it to post game messages
 
     public override void OnEnable()
     {
         base.OnEnable();
+        Current = this;
         ChatEnabled = ForgottenGameSettings.IsGameChatEnabled;
         ForgottenGameSettings.Saved += OnSettingsSaved;
     }
@@ -31,6 +33,7 @@ public sealed class RoomChatSession : MonoBehaviourPunCallbacks, IOnEventCallbac
     public override void OnDisable()
     {
         ForgottenGameSettings.Saved -= OnSettingsSaved;
+        if (Current == this) Current = null;
         base.OnDisable();
         Clear();
     }
@@ -57,6 +60,18 @@ public sealed class RoomChatSession : MonoBehaviourPunCallbacks, IOnEventCallbac
         if (!sent) { feedback = "Message could not be sent. Check your connection."; return false; }
         nextSendTime = now + SendInterval;
         return true;
+    }
+
+    public void AddSystemMessage(string text) // adds a line from the game itself, only this client sees it so every client has to call it
+    {
+        if (!ChatEnabled) return;
+
+        string body = CleanText(text, MaximumCharacters);
+        if (body.Length == 0) return;
+
+        if (messages.Count == HistoryLimit) messages.RemoveAt(0);
+        messages.Add("System: " + body);
+        Changed?.Invoke();
     }
 
     public void OnEvent(EventData data)
