@@ -50,6 +50,15 @@ MonoBehaviour:
   - RPC_PlayerWon
   - TakeDamage
   - ShowDamageNumber
+  - ApplyInstalledCount
+  - ApplyInventoryState
+  - ReceiveMessage
+  - RequestBeginInstall
+  - RequestCancelInstall
+  - RequestDrop
+  - RequestFinishInstall
+  - RequestPickup
+  - RequestReleaseAll
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

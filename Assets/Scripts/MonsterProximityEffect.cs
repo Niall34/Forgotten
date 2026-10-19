@@ -2,12 +2,11 @@ using Photon.Pun;
 using UnityEngine;
 using UnityEngine.UI;
 
-// darkens the screen edges, dims the whole screen and plays a heartbeat that gets louder and faster the closer the monster is
+// fades your dark overlay in and plays a heartbeat that gets louder and faster the closer the monster is
 public class MonsterProximityEffect : MonoBehaviour
 {
-    [Header("Overlays")]
-    public Image vignetteImage; // full screen image for the dark border, set its color in the editor, only the transparency is changed here
-    public Image darkenImage; // full screen image that dims everything, set its color in the editor too
+    [Header("Overlay")]
+    public Image darkenImage; // full screen image with your sprite on it, set the sprite and color in the editor, only the transparency is changed here
 
     [Header("Heartbeat")]
     public AudioClip heartbeatClip; // a loop of your heartbeat sound
@@ -21,13 +20,9 @@ public class MonsterProximityEffect : MonoBehaviour
     public float maxHeightDifference = 3.5f; // a monster further than this above or below you on another floor does not count
 
     [Header("Strength")]
-    [Range(0f, 1f)] public float maxVignetteAlpha = 0.9f;
-    [Range(0f, 1f)] public float maxDarkenAlpha = 0.45f;
-    [Range(0f, 1f)] public float vignetteInnerRadius = 0.45f; // how far out from the center the dark border starts, only used when the vignette has no sprite of its own
+    [Range(0f, 1f)] public float maxDarkenAlpha = 0.45f; // how see through the image still is at full strength, 1 means fully solid
     public float fadeInSpeed = 1.5f; // how fast the effect comes on, full strength per second
     public float fadeOutSpeed = 0.7f; // how fast it fades when the monster leaves
-    public float pulseAmount = 0.15f; // how much the border throbs, 0 for none
-    public float pulseSpeed = 8f;
 
     private Transform monster;
     private AudioSource heartbeatSource;
@@ -49,17 +44,11 @@ public class MonsterProximityEffect : MonoBehaviour
         PhotonView ownerView = GetComponentInParent<PhotonView>();
         if (ownerView != null && !ownerView.IsMine)
         {
-            SetAlpha(vignetteImage, 0f);
             SetAlpha(darkenImage, 0f);
             enabled = false;
             return;
         }
 
-        if (vignetteImage != null)
-        {
-            vignetteImage.raycastTarget = false;
-            if (vignetteImage.sprite == null) vignetteImage.sprite = MakeVignetteSprite();
-        }
         if (darkenImage != null) darkenImage.raycastTarget = false;
 
         heartbeatSource = gameObject.AddComponent<AudioSource>();
@@ -69,14 +58,14 @@ public class MonsterProximityEffect : MonoBehaviour
         heartbeatSource.spatialBlend = 0f; // plain 2d sound, it is inside your own head
         heartbeatSource.volume = 0f;
 
-        SetAlpha(vignetteImage, 0f);
         SetAlpha(darkenImage, 0f);
     }
 
     private void Update() // works out how close the monster is, then drives the overlays and the heartbeat
     {
         MinimapTarget me = MinimapTarget.Local;
-        bool alive = me != null && me.IsAlive;
+        // spectators (dead players) and escaped players are never affected, the health script is read directly so there is no delay
+        bool affected = me != null && me.IsAlive && !me.IsDeadNow && !me.HasEscaped;
 
         searchTimer -= Time.unscaledDeltaTime;
         if (searchTimer <= 0f)
@@ -86,7 +75,7 @@ public class MonsterProximityEffect : MonoBehaviour
         }
 
         float target = 0f;
-        if (alive && monster != null)
+        if (affected && monster != null)
         {
             Vector3 diff = monster.position - me.transform.position;
             float height = Mathf.Abs(diff.y);
@@ -100,6 +89,7 @@ public class MonsterProximityEffect : MonoBehaviour
 
         float speed = target > intensity ? fadeInSpeed : fadeOutSpeed;
         intensity = Mathf.MoveTowards(intensity, target, speed * Time.deltaTime);
+        if (!affected) intensity = 0f; // switches off at once instead of fading, so a spectator never sees or hears it
 
         ApplyOverlays();
         ApplyHeartbeat();
@@ -126,11 +116,8 @@ public class MonsterProximityEffect : MonoBehaviour
         monster = closest;
     }
 
-    private void ApplyOverlays() // only the transparency changes, the color is whatever you set in the editor
+    private void ApplyOverlays() // only the transparency changes, the sprite and color are whatever you set in the editor
     {
-        float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseAmount * intensity;
-
-        SetAlpha(vignetteImage, intensity * maxVignetteAlpha * pulse);
         SetAlpha(darkenImage, intensity * maxDarkenAlpha);
     }
 
@@ -163,29 +150,5 @@ public class MonsterProximityEffect : MonoBehaviour
         tint.a = clamped;
         image.color = tint;
         image.enabled = clamped > 0.001f; // a full screen image that draws nothing still costs phones fill rate
-    }
-
-    private Sprite MakeVignetteSprite() // builds a soft dark edge sprite so no art asset is needed, the color comes from the image
-    {
-        int size = 128;
-        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        texture.wrapMode = TextureWrapMode.Clamp;
-
-        float half = size * 0.5f;
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dx = (x + 0.5f - half) / half;
-                float dy = (y + 0.5f - half) / half;
-                float fromCenter = Mathf.Sqrt(dx * dx + dy * dy) / 1.4142f; // 0 in the middle and 1 in the corners
-
-                float alpha = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(vignetteInnerRadius, 1f, fromCenter));
-                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
-            }
-        }
-        texture.Apply();
-
-        return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
     }
 }
