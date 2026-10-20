@@ -60,6 +60,7 @@ MonoBehaviour:
   - RequestPickup
   - RequestReleaseAll
   - Revive
+  - ForceDespawnRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

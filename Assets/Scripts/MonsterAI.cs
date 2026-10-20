@@ -201,6 +201,46 @@ public class MonsterAI : MonoBehaviourPun
         detectionGraceTimer = detectionGraceAfterRespawn; // reappearing shouldn't mean instantly spotting someone again, this is the timer that was meant to stop that
     }
 
+    public void RequestForceDespawn(float duration) // for the banish item, any player can ask but only the master client runs the ai so it does the actual vanishing
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            ForceDespawn(duration);
+        }
+        else
+        {
+            photonView.RPC(nameof(ForceDespawnRPC), RpcTarget.MasterClient, duration);
+        }
+    }
+
+    [PunRPC]
+    private void ForceDespawnRPC(float duration)
+    {
+        ForceDespawn(duration);
+    }
+
+    private void ForceDespawn(float duration)
+    {
+        // already hidden, or in the middle of a swing which ends in its own vanish
+        if (isDespawned || isAttacking)
+        {
+            return;
+        }
+
+        StartCoroutine(ForceDespawnRoutine(duration));
+    }
+
+    private IEnumerator ForceDespawnRoutine(float duration) // same hide and reappear flow as the random despawn, but it forgets who it was chasing so it does not pick the chase straight back up
+    {
+        currentTarget = null;
+        state = MonsterState.Patrol;
+
+        yield return StartCoroutine(DespawnAndRespawnRoutine(duration));
+
+        currentTarget = null;
+        state = MonsterState.Patrol;
+    }
+
     private AudioSource MakeSoundSource() // 3d source on the monster, volume fades evenly to silent at soundrange
     {
         AudioSource source = gameObject.AddComponent<AudioSource>();
@@ -605,11 +645,11 @@ public class MonsterAI : MonoBehaviourPun
         }
     }
 
-     private bool IsPlayerDowned(PlayerController player) // true when player is knocked down waiting to be revived
-        {
-            PlayerDownedState downed = player.GetComponent<PlayerDownedState>();
-            return downed != null && downed.IsDowned;
-        }
+    private bool IsPlayerDowned(PlayerController player) // true when player is knocked down waiting to be revived
+    {
+        PlayerDownedState downed = player.GetComponent<PlayerDownedState>();
+        return downed != null && downed.IsDowned;
+    }
 
 
     private PlayerController FindPlayerToChase() // loops every player and returns the closest one the monster can actually detect right now via shouldstartchasing, not just the geometrically nearest player, since a nearer one might be successfully hidden while someone further away is standing out in the open
