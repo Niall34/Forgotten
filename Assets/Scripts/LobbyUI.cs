@@ -46,6 +46,7 @@ public class LobbyUI : MonoBehaviour
     public TextMeshProUGUI hostedCodeText;
     public Button startButton;
     public Button hostLeaveButton;
+    public Button hostQuitButton; // optional, closes the game from the host screen, same as the main menu quit button
 
     [Header("Settings")]
     public ForgottenSettingsMenu settingsMenu; // the settings screen, put it on the lobby canvas root
@@ -87,6 +88,7 @@ public class LobbyUI : MonoBehaviour
     private int lastSeenErrorVersion = 0;
     private int lastSeenPlayerListVersion = -1;
     private bool handledMatchStarting = false;
+    private bool previewNeedsRespawn = false; // the lobby character went with the room we left, so it gets put back once we are in the lobby again
     private bool hasEnteredGameplayScene = false; // flips true the moment we actually land in the gameplay scene - stops
     // CheckForMatchStarting from re-showing the cover if MatchStarting only arrives after we're already there (it's a separate network round-trip from the scene load itself, so it can genuinely show up late)
 
@@ -122,6 +124,10 @@ public class LobbyUI : MonoBehaviour
         guestLeaveButton.onClick.AddListener(OnLeaveLobbyClicked);
         startButton.onClick.AddListener(OnStartClicked);
         hostLeaveButton.onClick.AddListener(OnLeaveLobbyClicked);
+        if (hostQuitButton != null)
+        {
+            hostQuitButton.onClick.AddListener(OnQuitClicked);
+        }
 
         uiSource = gameObject.AddComponent<AudioSource>();
         uiSource.playOnAwake = false;
@@ -182,6 +188,15 @@ public class LobbyUI : MonoBehaviour
         if (isInLobbyNow && wasInLobby == false)
         {
             SetStatus("");
+
+            if (previewNeedsRespawn)
+            {
+                previewNeedsRespawn = false;
+                if (lobbyStage != null && storedNickname != "")
+                {
+                    lobbyStage.SpawnPreview(storedNickname);
+                }
+            }
 
             // carry out whatever action was waiting on the connection to finish
             if (wantsToHostAfterConnecting)
@@ -271,6 +286,7 @@ public class LobbyUI : MonoBehaviour
             return;
         }
 
+        previewNeedsRespawn = true;
         ShowPanel(joiningLobbyPanel);
     }
 

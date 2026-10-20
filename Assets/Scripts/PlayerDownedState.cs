@@ -55,7 +55,7 @@ public class PlayerDownedState : MonoBehaviourPun
 
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.T)) RegisterHit();
-        if (Input.GetKeyDown(KeyCode.R)) Revive();
+        if (Input.GetKeyDown(KeyCode.Y)) Revive(); // was R, R now revives a teammate
 #endif
 
         bool amDead = health != null && health.IsDead;
@@ -81,6 +81,13 @@ public class PlayerDownedState : MonoBehaviourPun
         }
 
         reviveButtonObject.SetActive(reviveTarget != null);
+
+        // r does the same thing as the button, not while typing in chat or paused
+        if (reviveTarget != null && Input.GetKeyDown(KeyCode.R) && RoomChatUI.CapturesInput == false && Time.timeScale > 0f)
+        {
+            OnRevivePressed();
+        }
+
         statusText.text = IsDowned ? "KNOCKED DOWN : Calling for back up" : "";
     }
     // PlayerController will call this on every client each time the monster hits this player
@@ -93,7 +100,7 @@ public class PlayerDownedState : MonoBehaviourPun
 
         HitsTaken++;
         Debug.Log("Hit " + HitsTaken + " of " + (maxHearts * hitsPerHeart));
-      // only when a whole heart has just emptied
+        // only when a whole heart has just emptied
         if (HitsTaken % hitsPerHeart != 0)
         {
             return;
@@ -108,11 +115,16 @@ public class PlayerDownedState : MonoBehaviourPun
             }
             Debug.Log("Dead");
         }
-        else
+        else if (IsSoloGame() == false)
         {
             IsDowned = true;
             Debug.Log("Knocked down");
         }
+    }
+
+    private bool IsSoloGame() // nobody to revive you in a solo game, so the hearts just run out with no knocked down state
+    {
+        return NetworkManager.Instance != null && NetworkManager.Instance.IsSolo;
     }
 
     private void OnRevivePressed()
@@ -195,4 +207,3 @@ public class PlayerDownedState : MonoBehaviourPun
         reviveButtonObject.SetActive(false);
     }
 }
-        

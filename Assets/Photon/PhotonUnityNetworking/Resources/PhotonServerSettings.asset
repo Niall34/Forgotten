@@ -59,6 +59,7 @@ MonoBehaviour:
   - RequestFinishInstall
   - RequestPickup
   - RequestReleaseAll
+  - Revive
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

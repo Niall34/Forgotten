@@ -218,7 +218,12 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
         IsSolo = false;
         string cleanCode = code.Trim().ToUpper();
-        PhotonNetwork.JoinRoom(cleanCode);
+        bool sent = PhotonNetwork.JoinRoom(cleanCode);
+        if (sent == false)
+        {
+            // photon refused to even send it, usually because we are not back at the master server yet, say so instead of hanging
+            ReportError("Not connected yet, try again in a moment");
+        }
     }
 
     private void CreateRoomWithCode(string code, byte maxPlayers) // tells photon to actually create the room
@@ -280,6 +285,18 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinRoomFailed(short returnCode, string message) // photon callback: fires if a join-by-code attempt fails
     {
+        if (returnCode == ErrorCode.GameFull)
+        {
+            ReportError("That room is full");
+            return;
+        }
+
+        if (returnCode == ErrorCode.GameClosed)
+        {
+            ReportError("That match has already started");
+            return;
+        }
+
         ReportError("No room found with that code");
     }
 
