@@ -6,7 +6,6 @@ public class MonsterBanishItem : MonoBehaviour
     [SerializeField] private int uses = 1;
     [SerializeField] private KeyCode testKey = KeyCode.B;
 
-    // hook your inventory/UI button up to this
     public void Use()
     {
         if (uses <= 0) return;
@@ -18,7 +17,6 @@ public class MonsterBanishItem : MonoBehaviour
         monster.RequestForceDespawn(banishDuration);
     }
 
-    // remove once the item is wired into the inventory
     private void Update()
     {
         if (Input.GetKeyDown(testKey)) Use();
