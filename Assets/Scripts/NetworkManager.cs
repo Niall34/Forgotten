@@ -59,6 +59,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     private byte lastRequestedMaxPlayers = DefaultMaxPlayers;
     private int hostRetryCount = 0;
     private bool isConnecting = false; //stops double clicks to prevent race conditions while loading
+    private bool disconnectingToMenu = false; // set while we drop the connection on purpose, so the disconnect callback loads the menu instead of showing an error
     private bool leavingToLobby = false; // set by QuitToLobby so OnLeftRoom knows to load the lobby scene once photon has actually finished leaving
 
     // any script that needs the network manager call this
@@ -168,6 +169,18 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnDisconnected(DisconnectCause cause) // photon callback: fires on disconnect
     {
         isConnecting = false;
+
+        if (disconnectingToMenu)
+        {
+            // we asked for this one, so no error message, just carry on to the menu
+            disconnectingToMenu = false;
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != lobbySceneName)
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(lobbySceneName);
+            }
+            return;
+        }
+
         ReportError("Disconnected: " + cause);
     }
 
@@ -301,6 +314,15 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if (leavingToLobby)
         {
             leavingToLobby = false;
+
+            // going back to the menu means a clean disconnect too, otherwise the menu opens still connected and shows the wrong panel
+            if (PhotonNetwork.IsConnected)
+            {
+                disconnectingToMenu = true;
+                PhotonNetwork.Disconnect();
+                return;
+            }
+
             UnityEngine.SceneManagement.SceneManager.LoadScene(lobbySceneName); // only this player goes back, everyone else carries on
         }
     }
@@ -446,6 +468,26 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         // guests and solo players just leave on their own, OnLeftRoom finishes the job once photon says we're out
         leavingToLobby = true;
         PhotonNetwork.LeaveRoom();
+        StartCoroutine(ForceMenuIfStuck());
+    }
+
+    private System.Collections.IEnumerator ForceMenuIfStuck() // safety net, if photon never finishes leaving the player would be left in the match with the menu drawn over it
+    {
+        // realtime because the pause menu has the game frozen
+        yield return new WaitForSecondsRealtime(2f);
+
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == lobbySceneName)
+        {
+            yield break; // it worked, we are already back
+        }
+
+        leavingToLobby = false;
+        if (PhotonNetwork.IsConnected)
+        {
+            disconnectingToMenu = true; // so the disconnect that follows counts as on purpose
+            PhotonNetwork.Disconnect();
+        }
+        UnityEngine.SceneManagement.SceneManager.LoadScene(lobbySceneName);
     }
 
     private void ReturnEveryoneToLobby() // host only, wipes the match objects then loads the lobby scene for every client

@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// a simple local pause menu, press Escape  or tap the pause button to open/close it
+// a simple local pause menu, press ctrl  or tap the pause button to open/close it
 // this only pauses things on their screen since Time.timeScale is a per-client setting
 public class PauseMenuController : MonoBehaviour
 {
@@ -14,6 +14,9 @@ public class PauseMenuController : MonoBehaviour
 
     private bool isPaused = false;
     private AudioSource uiSource;
+    private bool cursorSaved; // true while we are holding the cursor state from before the pause
+    private CursorLockMode lockBeforePause;
+    private bool visibleBeforePause;
 
     private void Awake() // gives every button inside the pause panel the click sound
     {
@@ -48,11 +51,11 @@ public class PauseMenuController : MonoBehaviour
         }
     }
 
-    private void Update() // watches for the Escape key every frame, works even while paused since Input isn't affected by timeScale
+    private void Update() // watches for the ctrl key every frame, works even while paused since Input isn't affected by timeScale
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl))
         {
-            // settings handles its own escape, so skip pausing while it is open or closed this frame
+            // settings handles its own ctrl press, so skip pausing while it is open or closed this frame
             if (settingsMenu != null && (settingsMenu.IsOpen || settingsMenu.JustClosed))
             {
                 return;
@@ -112,7 +115,23 @@ public class PauseMenuController : MonoBehaviour
 
         Time.timeScale = paused ? 0f : 1f;
 
-        Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = paused;
+        if (paused)
+        {
+            // remember how the cursor was so resuming puts it back the same, locking it ourselves made the pause button unclickable with a mouse
+            if (!cursorSaved)
+            {
+                lockBeforePause = Cursor.lockState;
+                visibleBeforePause = Cursor.visible;
+                cursorSaved = true;
+            }
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else if (cursorSaved)
+        {
+            Cursor.lockState = lockBeforePause;
+            Cursor.visible = visibleBeforePause;
+            cursorSaved = false;
+        }
     }
 }

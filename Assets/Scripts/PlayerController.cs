@@ -143,6 +143,11 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         HasEscaped = true;
     }
 
+    public Camera PlayerCamera // the camera made for this player at runtime, the spectator script borrows it after you die
+    {
+        get { return playerCamera; }
+    }
+
     private void Awake() // sets up references and starting camera values
     {
         controller = GetComponent<CharacterController>();
@@ -306,7 +311,11 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         if (photonView.IsMine && playerCamera != null)
         {
-            UpdateCameraPosition();
+            // a dead player's camera belongs to the spectator script now
+            if (health == null || !health.IsDead)
+            {
+                UpdateCameraPosition();
+            }
             EnsureAudioListener();
         }
 

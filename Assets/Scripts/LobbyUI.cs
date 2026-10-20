@@ -263,6 +263,14 @@ public class LobbyUI : MonoBehaviour
         HideLoadingPopup();
         SetStatus("");
         canvas.enabled = true;
+
+        // leaving from inside a match is the pause menu quit, that goes to the main menu, only leaving from the lobby itself wants the code entry panel
+        if (SceneManager.GetActiveScene().name != net.LobbySceneName)
+        {
+            ShowPanel(mainLobbyPanel);
+            return;
+        }
+
         ShowPanel(joiningLobbyPanel);
     }
 

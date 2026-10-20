@@ -147,10 +147,10 @@ public sealed class ForgottenSettingsMenu : MonoBehaviour
         lobbyMusic = source;
     }
 
-    private void Update() // escape backs out of settings without saving
+    private void Update() // ctrl backs out of settings without saving
     {
         if (settingsPanel != null && settingsPanel.activeSelf &&
-            Input.GetKeyDown(KeyCode.Escape))
+            (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl)))
         {
             BackWithoutSaving();
         }

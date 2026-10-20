@@ -764,7 +764,7 @@ MonoBehaviour:
   despawnChance: 0.5
   despawnHiddenDuration: 25
   attackRespawnDelay: 10
-  attackRange: 0.7
+  attackRange: 1.3
   attackDamage: 35
   attackCooldown: 1.5
   attackAnimationDuration: 2.27

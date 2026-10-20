@@ -245,7 +245,7 @@ MonoBehaviour:
   maxHealth: 100
   injuredHealthThreshold: 50
   deadHealthThreshold: 0
-  injuredSpeedMultiplier: 0.5
+  injuredSpeedMultiplier: 0.7
   movementController: {fileID: 0}
   spectatorController: {fileID: 0}
 --- !u!114 &-2942269655581590931
@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cd554d4ac4b59b46b4c86142c03dd6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
-  speedPenalty: 0.5
+  speedPenalty: 0.8
   generator: {fileID: 0}
   installHoldDuration: 10
 --- !u!114 &2662767453185733991

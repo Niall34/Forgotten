@@ -61,7 +61,7 @@ namespace Forgotten.Player
             if (movementController != null) movementController.enabled = false;
             GetComponent<CharacterController>().enabled = false;
             spectatorController?.BeginSpectating(this);
-            if (movementController != null) spectatorController.enabled = true;
+            if (spectatorController != null) spectatorController.enabled = true;
             GetComponent<SpectatorController>().enabled = true;
         }
     }
