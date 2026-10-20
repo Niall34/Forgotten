@@ -81,6 +81,7 @@ GameObject:
   - component: {fileID: 3939760014595542167}
   - component: {fileID: 1757037432351021563}
   - component: {fileID: 2662767453185733991}
+  - component: {fileID: 7424976373707462395}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -303,6 +304,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44ae4227edd5bac4194d06002e2f5734, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIPrompt
+--- !u!114 &7424976373707462395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8650357492239534285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce83a61354d0046bb8b489527c81fe55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDownedState
+  maxHearts: 3
+  hitsPerHeart: 2
+  reviveRange: 2.5
 --- !u!1001 &3849207414219338483
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -45,6 +45,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     public float torchHeight = 1.4f; // roughly chest height, where the light itself sits, regardless of what pose the model's in
 
     [SerializeField] private PlayerHealthStateMachine health; // drag the same GameObject's health state machine here
+    private PlayerDownedState downedState;
 
     [Header("Sounds")]
     [UnityEngine.Serialization.FormerlySerializedAs("walkStepClips")]
@@ -152,6 +153,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     {
         controller = GetComponent<CharacterController>();
         playerInventory = GetComponent<PlayerInventory>();
+        downedState = GetComponent<PlayerDownedState>();
 
         // grabbed here instead of SetupTouchControls so every client's copy of this player has it,
         // not just the local owner's, otherwise the SetFlashlightState rpc has nothing to call on remote clients
@@ -207,6 +209,18 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
         }
 
         if (health != null && health.IsDead) return;
+
+        // knocked down state : freeze movement 
+        if (downedState != null && downedState.IsDowned)
+        {
+            lookSurface?.ConsumeLookDelta();
+            animatorSpeedParam = 0;
+            movementNoiseLevel = 0;
+            isSprinting = false;
+            if (animator != null) animator.SetFloat("Speed", 0);
+            if (controller.enabled) controller.Move(ApplyGravity() * Time.deltaTime);
+            return;
+        }
 
         if (RoomChatUI.CapturesInput || (playerInventory != null && playerInventory.IsBackpackOpen))
         {
@@ -552,6 +566,15 @@ public class PlayerController : MonoBehaviourPun, IPunObservable
     private void TakeDamage(int amount)
     {
         if (health == null || health.IsDead) return;
+
+        // knocked down player can't take any more damage 
+        if (downedState != null && downedState.IsDowned) return;
+
+        if (downedState != null)
+        {
+            downedState.RegisterHit();
+        }
+
         health.CurrentHealth -= amount;
         PlayClip(damageSource, damageClip, 1f); // TakeDamage runs on every client, so everyone close enough hears it
     }

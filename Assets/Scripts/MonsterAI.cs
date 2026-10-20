@@ -443,6 +443,13 @@ public class MonsterAI : MonoBehaviourPun
             state = MonsterState.Patrol;
             return;
         }
+        // player knocked down, ignore 
+        if (IsPlayerDowned(currentTarget))
+        {
+            currentTarget = null;
+            state = MonsterState.Patrol;
+            return;
+        }
 
         float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
 
@@ -549,6 +556,7 @@ public class MonsterAI : MonoBehaviourPun
 
         var health = currentTarget.GetComponent<Forgotten.Player.PlayerHealthStateMachine>();
         if (health != null && health.IsDead) return false;
+        if (IsPlayerDowned(currentTarget)) return false;
 
         float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
         if (distance > attackRange + attackHitLeeway) return false;
@@ -597,6 +605,13 @@ public class MonsterAI : MonoBehaviourPun
         }
     }
 
+     private bool IsPlayerDowned(PlayerController player) // true when player is knocked down waiting to be revived
+        {
+            PlayerDownedState downed = player.GetComponent<PlayerDownedState>();
+            return downed != null && downed.IsDowned;
+        }
+
+
     private PlayerController FindPlayerToChase() // loops every player and returns the closest one the monster can actually detect right now via shouldstartchasing, not just the geometrically nearest player, since a nearer one might be successfully hidden while someone further away is standing out in the open
     {
         PlayerController best = null;
@@ -607,6 +622,7 @@ public class MonsterAI : MonoBehaviourPun
             if (player.HasEscaped) continue;
             var health = player.GetComponent<Forgotten.Player.PlayerHealthStateMachine>();
             if (health != null && health.IsDead) continue;
+            if (IsPlayerDowned(player)) continue;
 
             float distance = Vector3.Distance(transform.position, player.transform.position);
             if (ShouldStartChasing(player, distance) == false) continue;
@@ -631,6 +647,7 @@ public class MonsterAI : MonoBehaviourPun
             if (player.HasEscaped) continue;
             var health = player.GetComponent<Forgotten.Player.PlayerHealthStateMachine>();
             if (health != null && health.IsDead) continue;
+            if (IsPlayerDowned(player)) continue;
             if (player.IsSprinting == false) continue;
 
             float distance = Vector3.Distance(transform.position, player.transform.position);
