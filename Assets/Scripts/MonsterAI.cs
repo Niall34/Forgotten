@@ -556,6 +556,7 @@ public class MonsterAI : MonoBehaviourPun
 
         var health = currentTarget.GetComponent<Forgotten.Player.PlayerHealthStateMachine>();
         if (health != null && health.IsDead) return false;
+        if (IsPlayerDowned(currentTarget)) return false;
 
         float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
         if (distance > attackRange + attackHitLeeway) return false;
