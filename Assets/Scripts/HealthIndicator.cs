@@ -9,28 +9,29 @@ public class HealthIndicator : MonoBehaviourPun
     public int maxHearts = 3;         
     public int maxHealth = 100;       
 
-    private Forgotten.Player.PlayerHealthStateMachine health;   
+    private PlayerDownedState downedState;   
     private Image[] redHearts;                                   
 
     private void Start() {                                         
         if (photonView.IsMine == false) return;                  
-        health = GetComponent<Forgotten.Player.PlayerHealthStateMachine>();   
+        downedState = GetComponent<PlayerDownedState>();  
         BuildHearts();                                            // draw the hearts
     }
 
     private void Update()                                         // runs every frame
     {
-        if (redHearts == null || health == null) return;          
-
-        int halvesTotal = maxHearts * 2;                                              // each heart has 2 halves
-        float healthFraction = (float)health.CurrentHealth / maxHealth;               // 1 = full health, 0 = dead
-        int halvesLeft = Mathf.CeilToInt(healthFraction * halvesTotal);               // how many half hearts remain
-        int halvesLost = halvesTotal - halvesLeft;                                    // how many half hearts are gone
-
-        for (int i = 0; i < redHearts.Length; i++)                                    // go through each heart
+        if (redHearts == null || downedState == null)
         {
-            int lostOnThisHeart = Mathf.Clamp(halvesLost - i * 2, 0, 2);              // 0, 1 or 2 halves lost on this heart
-            redHearts[i].fillAmount = 1f - lostOnThisHeart / 2f;                      // 1 = full, 0.5 = half, 0 = empty
+            return;
+        }
+
+        for (int i = 0; i < redHearts.Length; i++)
+        {
+            // how many hits have landed on this particular heart
+            int hitsOnThisHeart = Mathf.Clamp(downedState.HitsTaken - i * downedState.hitsPerHeart, 0, downedState.hitsPerHeart);
+
+            // 0 hits = whole heart, 1 hit = half, 2 hits = empty
+            redHearts[i].fillAmount = 1f - (float)hitsOnThisHeart / downedState.hitsPerHeart;
         }
     }
 
@@ -47,7 +48,7 @@ public class HealthIndicator : MonoBehaviourPun
 
         for (int i = 0; i < maxHearts; i++)                                           
         {
-            float x = (i - (maxHearts - 1) / 2f) * 90f;                              
+            float x = (i - (maxHearts - 1) / 2f) * 60f;                              
             MakeImage(canvasObject.transform, emptyHeartSprite, x);                   
             redHearts[i] = MakeImage(canvasObject.transform, fullHeartSprite, x);    
             redHearts[i].type = Image.Type.Filled;                                    
@@ -63,8 +64,8 @@ public class HealthIndicator : MonoBehaviourPun
         RectTransform rect = obj.AddComponent<RectTransform>();      
         rect.anchorMin = new Vector2(0.5f, 1f);                        
         rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.sizeDelta = new Vector2(70f, 70f);                         
-        rect.anchoredPosition = new Vector2(x, -60f);                
+        rect.sizeDelta = new Vector2(45f, 45f);                         
+        rect.anchoredPosition = new Vector2(x, -40f);                
         Image image = obj.AddComponent<Image>();                       
         image.sprite = sprite;                                    
         return image;                                                   
